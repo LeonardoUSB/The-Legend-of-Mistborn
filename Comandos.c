@@ -4,11 +4,12 @@
 
 int dinero = 0;
 int aldeaActual = 1;
+int mazmorraActual;
 int aleatorio;
 int corazones = 3;
 int vida = 3;
 
-void comprar(); void anteriorAldea(); void siguienteAldea(); void gameOver();
+void comprar(); void anteriorAldea(); void siguienteAldea(); void gameOver(); void mazmorra(); void generarAleatorio();
 
 void aldea() {
     int i;
@@ -33,10 +34,7 @@ void aldea() {
             printf("[Escogiste el comando de busqueda]\n");
             return;
         }
-        else if (strcmp(entrada, "maz") == 0) {
-            printf("[Escogiste el comando de mazmorra]\n");
-            return;
-        }
+        else if (strcmp(entrada, "maz") == 0) {mazmorraActual = aldeaActual; mazmorra();}
         else if (strcmp(entrada, "compr") == 0) comprar();
         else if (strcmp(entrada, "trans") == 0 && 70>15) {
             printf("[Escogiste el comando de transportar]\n");
@@ -46,7 +44,7 @@ void aldea() {
         else if (strcmp(entrada, "sig") == 0) siguienteAldea();
         else if (strcmp(entrada, "+") == 0) dinero = dinero + 100;
         else if (strcmp(entrada, "-") == 0) dinero = 0;            
-        else printf("\n[Comando no valido]\n\n");        
+        else printf("\n[Comando no valido]\n\n");
     }
 }
 
@@ -55,11 +53,7 @@ void anteriorAldea() {
     else {
         aldeaActual = aldeaActual - 1;
         dinero = dinero + 10;
-        aleatorio = random();
-        if (aleatorio % 2 != 0) {
-            vida = vida - 1; printf("\n[Has perdido 1 punto de vida]\n\n");
-            if (vida == 0) gameOver();
-        }
+        generarAleatorio();
     }
 
     return;
@@ -70,11 +64,7 @@ void siguienteAldea() {
     else {
         aldeaActual = aldeaActual + 1;
         dinero = dinero + 10;
-        aleatorio = random();
-        if (aleatorio % 2 != 0) {
-            vida = vida - 1; printf("\n[Has perdido 1 punto de vida]\n\n");
-            if (vida == 0) gameOver();
-        }
+        generarAleatorio();
     }
 
     return;
@@ -107,12 +97,56 @@ void comprar() {
             else {printf("\n[No tienes suficiente dinero]\n\n"); printf("Presiona 'Enter' para continuar...\n"); while (getchar() != '\n'); getchar();}
         }
         else if (strcmp(entrada, "3") == 0) {
-            if(dinero >= 100) {if (corazones < 127) {dinero = dinero - 100; corazones = corazones + 1; vida = vida + 1; printf("\nCorazones actuales: %d\n\n", corazones); printf("Presiona 'Enter' para continuar...\n"); while (getchar() != '\n'); getchar();} else {printf("\n[Ya tienes la maxima cantidad de corazones]\n\n");}}
+            if(dinero >= 100) {if (corazones < 127) {dinero = dinero - 100; corazones = corazones + 1; vida = corazones; printf("\nCorazones actuales: %d\n\n", corazones); printf("Presiona 'Enter' para continuar...\n"); while (getchar() != '\n'); getchar();} else {printf("\n[Ya tienes la maxima cantidad de corazones]\n\n");}}
             else {printf("\n[No tienes suficiente dinero]\n\n"); printf("Presiona 'Enter' para continuar...\n"); while (getchar() != '\n'); getchar();}
         }
         else if (strcmp(entrada, "4") == 0) return;
         else {printf("\n[Opcion no valida]\n\n"); printf("Presiona 'Enter' para continuar...\n"); while (getchar() != '\n'); getchar();}
     }
+}
+
+void mazmorra() {
+    int i;
+    char entrada[5];
+
+    while (1) {
+        printf("\nBienvenido a la mazmorra %d\n\n", mazmorraActual);
+        printf("Comandos disponibles:\n");        
+        printf("----------------------------------\n| busq | atac | ant | sig |\n----------------------------------\n"); 
+        printf("| Corazones:%d | Vida:%d | Dinero:%d |\n", corazones, vida, dinero); 
+        printf("----------------------------------\n\n");
+        printf("Ingrese un comando:\n");
+
+        /* Almacena la entrada por teclado en el arreglo "entrada". */
+        scanf("%5s", entrada);
+
+        /* Convierte todos los caracteres de la entrada en minusculas. */
+        for (i = 0; entrada[i] != '\0'; i++) entrada[i] = tolower(entrada[i]);
+
+        /* Toda accion en la mazmorra generan un numero aleatorio para determinar si el jugador pierde vida. */
+        generarAleatorio();
+
+        if (strcmp(entrada, "busq") == 0) {
+            printf("[Escogiste el comando de busqueda]\n");
+            return;
+        }
+        else if (strcmp(entrada, "atac") == 0) {
+            printf("[Escogiste el comando de atacar]\n");
+            return;
+        }
+        else if (strcmp(entrada, "ant") == 0) return;
+        else if (strcmp(entrada, "sig") == 0) {siguienteAldea(); return;}      
+        else printf("\n[Comando no valido]\n\n");
+    }
+}
+
+void generarAleatorio() {
+    aleatorio = random();
+    if (aleatorio % 2 != 0) {
+        vida = vida - 1; printf("\n[Has perdido 1 punto de vida]\n\n");
+        if (vida == 0) gameOver();
+    }
+    return;
 }
 
 void gameOver() {
