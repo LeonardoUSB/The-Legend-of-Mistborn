@@ -89,19 +89,19 @@ void comprar() {
         scanf("%1s", entrada);
 
         if (strcmp(entrada, "1") == 0) {
-            if(dinero >= 5) {if (vida < corazones) {dinero = dinero - 5; vida = vida + 1; printf("\nVida actual: %d\n\n", vida); printf("Presiona 'Enter' para continuar...\n"); while (getchar() != '\n'); getchar();} else {printf("\n[Ya estas al maximo de vida]\n\n");}}
-            else {printf("\n[No tienes suficiente dinero]\n\n"); printf("Presiona 'Enter' para continuar...\n"); while (getchar() != '\n'); getchar();}
+            if(dinero >= 5) {if (vida < corazones) {dinero = dinero - 5; vida = vida + 1; printf("\nVida actual: %d\n\n", vida); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();} else {printf("\n[Ya estas al maximo de vida]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}}
+            else {printf("\n[No tienes suficiente dinero]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}
         }
         else if (strcmp(entrada, "2") == 0) {
-            if(dinero >= 25) {dinero = dinero - 25; printf("\n[Compraste la espada desafilada]\n\n"); printf("Presiona 'Enter' para continuar...\n"); while (getchar() != '\n'); getchar();}
-            else {printf("\n[No tienes suficiente dinero]\n\n"); printf("Presiona 'Enter' para continuar...\n"); while (getchar() != '\n'); getchar();}
+            if(dinero >= 25) {dinero = dinero - 25; printf("\n[Compraste la espada desafilada]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}
+            else {printf("\n[No tienes suficiente dinero]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}
         }
         else if (strcmp(entrada, "3") == 0) {
-            if(dinero >= 100) {if (corazones < 127) {dinero = dinero - 100; corazones = corazones + 1; vida = corazones; printf("\nCorazones actuales: %d\n\n", corazones); printf("Presiona 'Enter' para continuar...\n"); while (getchar() != '\n'); getchar();} else {printf("\n[Ya tienes la maxima cantidad de corazones]\n\n");}}
-            else {printf("\n[No tienes suficiente dinero]\n\n"); printf("Presiona 'Enter' para continuar...\n"); while (getchar() != '\n'); getchar();}
+            if(dinero >= 100) {if (corazones < 127) {dinero = dinero - 100; corazones = corazones + 1; vida = corazones; printf("\nCorazones actuales: %d\n\n", corazones); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();} else {printf("\n[Ya tienes la maxima cantidad de corazones]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}}
+            else {printf("\n[No tienes suficiente dinero]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}
         }
         else if (strcmp(entrada, "4") == 0) return;
-        else {printf("\n[Opcion no valida]\n\n"); printf("Presiona 'Enter' para continuar...\n"); while (getchar() != '\n'); getchar();}
+        else {printf("\n[Opcion no valida]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}
     }
 }
 
@@ -123,7 +123,7 @@ void mazmorra() {
         /* Convierte todos los caracteres de la entrada en minusculas. */
         for (i = 0; entrada[i] != '\0'; i++) entrada[i] = tolower(entrada[i]);
 
-        /* Toda accion en la mazmorra generan un numero aleatorio para determinar si el jugador pierde vida. */
+        /* Toda accion en la mazmorra genera un numero aleatorio para determinar si el jugador pierde vida. */
         generarAleatorio();
 
         if (strcmp(entrada, "busq") == 0) {
@@ -143,7 +143,8 @@ void mazmorra() {
 void generarAleatorio() {
     aleatorio = random();
     if (aleatorio % 2 != 0) {
-        vida = vida - 1; printf("\n[Has perdido 1 punto de vida]\n\n");
+        vida = vida - 1;
+        printf("\n[Has perdido 1 punto de vida]\n\n");
         if (vida == 0) gameOver();
     }
     return;
