@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+
 int potencia(int base, int exponente){
     int resultado=1;
     for (int i = 0; i < exponente; i++)
@@ -14,8 +15,16 @@ int potencia(int base, int exponente){
 struct Aldea
 {
     char* nombre;
+
     struct Aldea* siguiente;
     struct Aldea* anterior;
+
+    struct Item* derrotadoPor;
+
+    struct Item* contiene;
+    struct Item* mazContiene;
+    int yaBusco;
+
 };
 
 void creaNombresAldea(struct Aldea* cabeza,char**nombres,char**nuevosNombres,int tamNuevos,int profundidad){
@@ -64,16 +73,19 @@ void creaNombresAldea(struct Aldea* cabeza,char**nombres,char**nuevosNombres,int
 }
 
 struct Aldea* crearListaAldeas(int numAldeas){
-    struct Aldea* cabeza =malloc(sizeof(struct Aldea));
+    
+    struct Aldea* cabeza = malloc(sizeof(struct Aldea));
+
     cabeza->anterior=NULL;
     cabeza->siguiente=NULL;
 
     struct Aldea* nuevaAldea = cabeza;
-
-    for (size_t i = 0; i < numAldeas-1; i++)
+    
+    for (int i = 0; i < numAldeas-1; i++)
     {
         
         nuevaAldea->siguiente=malloc(sizeof(struct Aldea));
+
         nuevaAldea->siguiente->anterior=nuevaAldea;
         nuevaAldea=nuevaAldea->siguiente;
         nuevaAldea->siguiente=NULL;
@@ -160,6 +172,9 @@ struct Item
     char* nombre;
     struct Item* siguiente;
     struct Item* anterior;
+    int encontrado;
+    struct Aldea* ubicacion;
+    struct Aldea* derrotaA;
 };
 
 
@@ -304,30 +319,158 @@ struct ItemParalelo* crearListaItemAlter(int numAldeas){
 struct Jugador
 {
     int vidas;
+    struct Aldea*ubicacion;
+    int estado;
 };
+
+struct Aldea* encontrarAldea(struct  Aldea* AldeaIni, struct  Aldea* cabeza, struct  Item* ItemIni, int* cont){
+    struct Aldea* AldeaSig=AldeaIni;
+    if (AldeaSig==NULL)
+    {
+        AldeaSig=cabeza;
+        AldeaSig=encontrarAldea(AldeaSig, cabeza,ItemIni, cont);
+        if(AldeaSig->contiene==NULL){
+            AldeaSig->contiene=ItemIni;
+            ItemIni->ubicacion=AldeaSig;
+            ItemIni=ItemIni->siguiente;
+            (*cont)++;
+            AldeaSig=encontrarAldea(AldeaSig, cabeza, ItemIni, cont);
+        }
+        else{
+            AldeaSig->mazContiene=ItemIni;
+            ItemIni->ubicacion=AldeaSig;
+            ItemIni=ItemIni->siguiente;
+            (*cont)++;
+            AldeaSig=encontrarAldea(AldeaSig, cabeza, ItemIni, cont);
+        }
+        
+    }
+    
+    while((AldeaSig->contiene!=NULL && AldeaSig->mazContiene!=NULL) && AldeaSig->siguiente!=NULL){
+        AldeaSig=AldeaSig->siguiente;
+    }
+    if (AldeaSig->siguiente==NULL && AldeaSig->contiene==NULL && AldeaSig->mazContiene==NULL){
+        AldeaSig=cabeza;
+        encontrarAldea(AldeaSig, cabeza,ItemIni,cont);
+    }
+    else{
+        return AldeaSig;
+    }
+
+}
+
+void ubicaTodo(struct Aldea* cabeza,struct Item* ItemIni, int numAldeas){
+    struct Aldea* aldeaSig=cabeza;
+    struct Item* itemSig=ItemIni;
+    int random;
+    int cont=0;
+    while(cont<numAldeas){
+        random=rand();
+        aldeaSig=encontrarAldea(aldeaSig,cabeza, itemSig,&cont);
+        
+        if(random%2==0 && aldeaSig->contiene ==NULL){
+            aldeaSig->contiene=itemSig;
+            itemSig->ubicacion=aldeaSig;
+
+            aldeaSig=aldeaSig->siguiente;
+            itemSig=itemSig->siguiente;
+            cont++;
+        }
+        else{
+            random=rand();
+            if(random%2==0 && aldeaSig->mazContiene ==NULL){
+                aldeaSig->contiene=itemSig;
+                itemSig->ubicacion=aldeaSig;
+
+                aldeaSig=aldeaSig->siguiente;
+                itemSig=itemSig->siguiente;
+                cont++;
+            }
+            else{
+                aldeaSig=aldeaSig->siguiente;
+            }
+        }
+
+    }
+}
+
+struct Item* encontrarItem(struct  Item* ItemIni,struct  Item* cabeza,struct  Aldea** AldeaIni, int* cont){
+    struct Item* itemSig=ItemIni;
+
+    if(itemSig==NULL){
+        itemSig=cabeza;
+        itemSig=encontrarItem(itemSig, cabeza,AldeaIni,cont);
+        (*AldeaIni)->derrotadoPor=itemSig;
+        itemSig->derrotaA=(*AldeaIni);
+        (*AldeaIni)=(*AldeaIni)->siguiente;
+        (*cont)++;
+        itemSig=encontrarItem(itemSig, cabeza,AldeaIni,cont);
+    }
+
+    while(itemSig->derrotaA!=NULL && itemSig->siguiente!=NULL){
+        itemSig=itemSig->siguiente;
+    }
+    if (itemSig->siguiente==NULL && itemSig->ubicacion==NULL){
+        itemSig=cabeza;
+        encontrarItem(itemSig, cabeza,AldeaIni,cont);
+    }
+    else{
+        
+
+        return itemSig;
+    }
+
+}
+
+void derrotaTodo(struct Aldea* cabeza,struct Item* ItemIni, int numAldeas){
+    struct Aldea* aldeaSig=cabeza;
+    struct Item* itemSig=ItemIni;
+    struct Aldea** punAldea=&aldeaSig;
+    int random;
+    int cont=0;
+    while(cont<numAldeas){
+        random=rand();
+        itemSig=encontrarItem(itemSig,ItemIni,punAldea,&cont);
+        if(random%2==0){
+            aldeaSig->derrotadoPor=itemSig;
+            itemSig->derrotaA=aldeaSig;
+            aldeaSig=aldeaSig->siguiente;
+            itemSig=itemSig->siguiente;
+            cont++;
+        }
+        else{
+            itemSig=itemSig->siguiente;
+        }
+    }
+}
 
 void imprimeTodo(struct Aldea* cabeza, struct AldeaParalela* cabeazaAlter, struct Item* ItemIni,  struct ItemParalelo* ItemIniAlter){
     struct Aldea* siguiente= cabeza;
     while(siguiente !=NULL){
-        printf("%s\n", siguiente->nombre);
+        //printf("%s\n", siguiente->nombre);
         siguiente=siguiente->siguiente;
     }
     
     struct AldeaParalela* siguienteAlter= cabeazaAlter;
     while(siguienteAlter !=NULL){
-        printf("%s\n", siguienteAlter->nombre);
+        //printf("%s\n", siguienteAlter->nombre);
         siguienteAlter=siguienteAlter->siguiente;
     }
 
     struct Item* siguienteItem= ItemIni;
+    int i=0;
     while(siguienteItem !=NULL){
+
+        printf("%d\n",i );
         printf("%s\n", siguienteItem->nombre);
+        printf("%s\n", siguienteItem->derrotaA->nombre);
         siguienteItem=siguienteItem->siguiente;
+        i++;
     }
 
     struct ItemParalelo* siguienteItemAlter= ItemIniAlter;
     while(siguienteItemAlter !=NULL){
-        printf("%s\n", siguienteItemAlter->nombre);
+        //printf("%s\n", siguienteItemAlter->nombre);
         siguienteItemAlter=siguienteItemAlter->siguiente;
     }
 }
@@ -336,9 +479,9 @@ void imprimeTodo(struct Aldea* cabeza, struct AldeaParalela* cabeazaAlter, struc
 void inicializar(){
                                                         //Pedimos las aldeas
     printf("Bienvenido a Zelda\n");
-    printf("Por favor indica el nùmero de aldeas\n");
+    printf("Por favor indica el numero de aldeas\n");
     int numAldeas;
-    scanf("%d",&numAldeas);
+    scanf("%d",numAldeas);
                                                         //Inicializamos las estructuas
     struct Jugador jugador;
     jugador.vidas=3;
@@ -348,6 +491,7 @@ void inicializar(){
     struct Item* itemOrigen=crearListaItem(numAldeas);
     struct ItemParalelo* itemParaleloOrigen=crearListaItemAlter(numAldeas);
     
+    char*nombres = malloc(20*sizeof(char));
 
     char**nomAldeas=malloc(16 * sizeof(char*));
     for (int i = 0; i < 16; i++)
@@ -399,14 +543,23 @@ void inicializar(){
     }
     free(nomAldeas);
 
-    //imprimeTodo(aldeaOrigen, aldeaParalelaOrigen, itemOrigen, itemParaleloOrigen);
-
     srand(time(NULL));
+
+    ubicaTodo(aldeaOrigen,itemOrigen,numAldeas);  
+    derrotaTodo(aldeaOrigen,itemOrigen,numAldeas); 
+
+    imprimeTodo(aldeaOrigen, aldeaParalelaOrigen, itemOrigen, itemParaleloOrigen);
+
+    
+
+
     
 }
 
 
 int main(){
     inicializar();
+    
+    
 }
 
