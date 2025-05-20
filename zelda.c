@@ -427,7 +427,7 @@ void ubicaTodo(struct Aldea* cabeza,struct Item* ItemIni, int numAldeas){
         else{
             random=rand();
             if(random%2==0 && aldeaSig->mazContiene ==NULL){
-                aldeaSig->contiene=itemSig;
+                aldeaSig->mazContiene=itemSig;
                 itemSig->ubicacion=aldeaSig;
 
                 aldeaSig=aldeaSig->siguiente;
@@ -873,7 +873,7 @@ void buscarMazmorra() {
     if (aldeaActual->mazContiene == NULL) {
         printf("[No hay ningun objeto en esta mazmorra]\n");
         if (aldeaActual->nombre == aldeaOrigenDePana-> nombre) printf("[El item que derrota a la mazmorra de Luthadel se encuentra en la tienda]\n\n\n");
-        else if (aldeaActual->derrotadoPor->ubicacion->mazContiene != NULL) printf("[El item que derrota esta mazmorra se encuentra en la mazmorra %d: %s]\n\n\n", aldeaActual->nombre, indiceAldea(aldeaActual->derrotadoPor->ubicacion), aldeaActual->derrotadoPor->ubicacion->nombre);
+        else if (aldeaActual->derrotadoPor->ubicacion->mazContiene != NULL) printf("[El item que derrota esta mazmorra se encuentra en la mazmorra %d: %s]\n\n\n", indiceAldea(aldeaActual->derrotadoPor->ubicacion), aldeaActual->derrotadoPor->ubicacion->nombre);
         else printf("[El item que derrota a esta mazmorra se encuentra en la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->derrotadoPor->ubicacion), aldeaActual->derrotadoPor->ubicacion->nombre);
     }
     else {
