@@ -6,13 +6,13 @@
 
 int dinero = 0;
 int aleatorio;
-int numAldea = 1;
-struct Aldea* aldeaActual = NULL;
 struct Jugador jugador;
+struct Aldea* aldeaActual = NULL;
+struct Aldea* aldeaOrigenDePana = NULL;
 struct Item* itemOrigenDePana;
 struct Item* item;
 
-void comprar(); void anteriorAldea(); void siguienteAldea(); void gameOver(); void mazmorra(); void generarAleatorio(); void buscar();
+void comprar(); void anteriorAldea(); void siguienteAldea(); void gameOver(); void mazmorra(); void generarAleatorio(); void buscar(); void buscarMazmorra(); int indiceAldea();
 
 struct Jugador
 {
@@ -637,11 +637,6 @@ void inicializar(){
     struct AldeaParalela* aldeaParalelaOrigen=crearListaAldeasParalelas(numAldeas);
     struct Item* itemOrigen=crearListaItem(numAldeas);
     struct ItemParalelo* itemParaleloOrigen=crearListaItemAlter(numAldeas);
-    
-    aldeaActual = aldeaOrigen;
-    //itemOrigen->encontrado = 0;
-    item = itemOrigen;
-    itemOrigenDePana = itemOrigen;
 
     char**nomAldeas=malloc(16 * sizeof(char*));
     for (int i = 0; i < 16; i++)
@@ -701,6 +696,13 @@ void inicializar(){
     derrotaTodoAlter(aldeaParalelaOrigen,itemParaleloOrigen,numAldeas);
     //imprimeTodo(aldeaOrigen, aldeaParalelaOrigen, itemOrigen, itemParaleloOrigen);
 
+    aldeaActual = aldeaOrigen;
+    aldeaOrigenDePana = aldeaOrigen;
+    item = itemOrigen;
+    itemOrigenDePana = itemOrigen;
+
+    printf("\n\n");
+
     return;
 }
 
@@ -709,7 +711,7 @@ void aldea() {
     char entrada[6];
 
     while (1) {
-        printf("\nBienvenido a la aldea %d: %s\n\n", numAldea, aldeaActual->nombre);
+        printf("[ALDEA %d: %s]\n\n", indiceAldea(aldeaActual), aldeaActual->nombre);
         printf("Comandos disponibles:\n");
         /* Aqui en el if debe ir la condicion de que se imprime la lista de comandos incluyendo "trans" solo si
         El jugador ya derrotó la mazmorra que le permite transportarse al mundo paralelo. */
@@ -723,6 +725,8 @@ void aldea() {
         /* Convierte todos los caracteres de la entrada en minusculas. */
         for (i = 0; entrada[i] != '\0'; i++) entrada[i] = tolower(entrada[i]);
 
+        printf("\n\n");
+
         if (strcmp(entrada, "busq") == 0) buscar();
         else if (strcmp(entrada, "maz") == 0) mazmorra();
         else if (strcmp(entrada, "compr") == 0) comprar();
@@ -734,36 +738,44 @@ void aldea() {
         else if (strcmp(entrada, "sig") == 0) siguienteAldea();
         else if (strcmp(entrada, "+") == 0) dinero = dinero + 100;
         else if (strcmp(entrada, "-") == 0) dinero = 0;            
-        else printf("\n[Comando no valido]\n\n");
+        else printf("[Comando no valido]\n\n\n");
     }
 }
 
 void buscar() {
     if (aldeaActual->contiene == NULL) {
         printf("[No hay ningun objeto en esta aldea]\n");
-        printf("[El item derrota a la mazmorra de esta aldea se encuentra en %s]\n", aldeaActual->derrotadoPor->ubicacion->nombre);
+        if (aldeaActual->nombre == aldeaOrigenDePana-> nombre) printf("[El item que derrota a la mazmorra de Luthadel se encuentra en la tienda]\n\n");
+        else if (aldeaActual->derrotadoPor->ubicacion->mazContiene != NULL) printf("[El item que derrota a la mazmorra de %s se encuentra en la mazmorra %d: %s]\n\n\n", aldeaActual->nombre, indiceAldea(aldeaActual->derrotadoPor->ubicacion), aldeaActual->derrotadoPor->ubicacion->nombre);
+        else printf("[El item que derrota a la mazmorra de %s se encuentra en la aldea %d: %s]\n\n\n", aldeaActual->nombre, indiceAldea(aldeaActual->derrotadoPor->ubicacion), aldeaActual->derrotadoPor->ubicacion->nombre);
     }
     else {
         if (aldeaActual->contiene->encontrado == 1) {
             printf("[Ya has encontrado %s]\n", aldeaActual->contiene->nombre);
-            printf("[Este item derrota a la mazmorra de la aldea %s]\n", aldeaActual->contiene->derrotaA->nombre);
+            printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->contiene->derrotaA), aldeaActual->contiene->derrotaA->nombre);
         }
         else {
-            aldeaActual->yaBusco = 1;
             aldeaActual->contiene->encontrado = 1;
             printf("[Has encontrado %s]\n", aldeaActual->contiene->nombre);
-            printf("[Este item derrota a la mazmorra de la aldea %s]\n", aldeaActual->contiene->derrotaA->nombre);
+            printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->contiene->derrotaA), aldeaActual->contiene->derrotaA->nombre);
         }        
     }   
     return;
 }
 
+int indiceAldea(struct Aldea* aldeaBuscar) {
+    int indice = 1;
+    struct Aldea* temporal = aldeaOrigenDePana;
+
+    while (temporal != aldeaBuscar) {temporal = temporal->siguiente; indice = indice + 1;}
+
+    return indice;
+}
 
 void anteriorAldea() {
     if (aldeaActual->anterior == NULL) printf("\n[Estas en la primera aldea]\n\n");
     else {
         aldeaActual = aldeaActual->anterior;
-        numAldea = numAldea - 1;
         dinero = dinero + 10;
         generarAleatorio();
     }
@@ -775,7 +787,6 @@ void siguienteAldea() {
     if (aldeaActual->siguiente == NULL) printf("\n[Estas en la ultima aldea]\n\n");
     else {
         aldeaActual = aldeaActual->siguiente;
-        numAldea = numAldea + 1;
         dinero = dinero + 10;
         generarAleatorio();
     }
@@ -787,12 +798,12 @@ void comprar() {
     char entrada[2];
 
     while (1) {
-        printf("\n[TIENDA]\n");
+        printf("[TIENDA]\n");
         printf("1) Recuperar 1 punto de vida: $5\n");
-        printf("2) %s: $25\n", item->nombre);
+        printf("2) %s: $25\n", aldeaOrigenDePana->derrotadoPor->nombre);
         printf("3) Corazon adicional: $100\n");
         printf("4) Salir\n\n");
-        printf("Dinero actual: $%d\n", dinero);
+        printf("| Corazones:%d | Vida:%d | Dinero:%d |\n", jugador.corazones, jugador.vidas, dinero); 
         printf("Ingrese el numero del item que desee comprar:\n");
 
         /* Limpia el bufer. */
@@ -802,30 +813,35 @@ void comprar() {
         scanf("%1s", entrada);
 
         if (strcmp(entrada, "1") == 0) {
-            if(dinero >= 5) {if (jugador.vidas < jugador.corazones) {dinero = dinero - 5; jugador.vidas = jugador.vidas + 1; printf("\nVida actual: %d\n\n", jugador.vidas); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();} else {printf("\n[Ya estas al maximo de vida]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}}
-            else {printf("\n[No tienes suficiente dinero]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}
+            if(dinero >= 5) {if (jugador.vidas < jugador.corazones) {dinero = dinero - 5; jugador.vidas = jugador.vidas + 1; printf("\n\n");} else printf("\n\n[Ya estas al maximo de vida]\n\n\n");}
+            else printf("\n\n[No tienes suficiente dinero]\n\n\n");
         }
         else if (strcmp(entrada, "2") == 0) {
-            if(dinero >= 25) {if (itemOrigenDePana->encontrado == 0) {dinero = dinero - 25; itemOrigenDePana->encontrado = 1; printf("\n[Compraste %s]\n\n", itemOrigenDePana->nombre); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();} else {printf("\n[Ya tienes el objeto]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}}
-            else {printf("\n[No tienes suficiente dinero]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}
+            if(dinero >= 25) {if (aldeaOrigenDePana->derrotadoPor->encontrado == 0) {dinero = dinero - 25; aldeaOrigenDePana->derrotadoPor->encontrado = 1; printf("\n\n[Compraste %s]\n", aldeaOrigenDePana->derrotadoPor->nombre); printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaOrigenDePana->derrotadoPor->derrotaA), aldeaOrigenDePana->derrotadoPor->derrotaA->nombre);} else printf("\n\n[Ya tienes el objeto]\n\n\n");}
+            else printf("\n\n[No tienes suficiente dinero]\n\n\n");
         }
         else if (strcmp(entrada, "3") == 0) {
-            if(dinero >= 100) {if (jugador.corazones < 127) {dinero = dinero - 100; jugador.corazones = jugador.corazones + 1; jugador.vidas = jugador.corazones; printf("\nCorazones actuales: %d\n\n", jugador.corazones); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();} else {printf("\n[Ya tienes la maxima cantidad de corazones]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}}
-            else {printf("\n[No tienes suficiente dinero]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}
+            if(dinero >= 100) {if (jugador.corazones < 127) {dinero = dinero - 100; jugador.corazones = jugador.corazones + 100; jugador.vidas = jugador.corazones; printf("\n\n");} else printf("\n\n[Ya tienes la maxima cantidad de corazones]\n\n\n");}
+            else printf("\n\n[No tienes suficiente dinero]\n\n\n");
         }
-        else if (strcmp(entrada, "4") == 0) return;
-        else {printf("\n[Opcion no valida]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}
+        else if (strcmp(entrada, "4") == 0) {printf("\n\n"); return;}
+        else printf("\n\n[Opcion no valida]\n\n\n");
     }
 }
+
+// Implementacion de: Presiona cualquier tecla para continuar...
+/*printf("Presiona cualquier tecla para continuar...\n"); 
+while (getchar() != '\n');
+getchar();*/
 
 void mazmorra() {
     int i;
     char entrada[5];
 
     while (1) {
-        printf("\nBienvenido a la mazmorra de la aldea %s\n\n", aldeaActual->nombre);
+        printf("[MAZMORRA %d: %s]\n\n", indiceAldea(aldeaActual), aldeaActual->nombre);
         printf("Comandos disponibles:\n");        
-        printf("----------------------------------\n| busq | atac | ant | sig |\n----------------------------------\n"); 
+        printf("---------------------------\n| busq | atac | ant | sig |\n----------------------------------\n"); 
         printf("| Corazones:%d | Vida:%d | Dinero:%d |\n", jugador.corazones, jugador.vidas, dinero); 
         printf("----------------------------------\n\n");
         printf("Ingrese un comando:\n");
@@ -836,21 +852,43 @@ void mazmorra() {
         /* Convierte todos los caracteres de la entrada en minusculas. */
         for (i = 0; entrada[i] != '\0'; i++) entrada[i] = tolower(entrada[i]);
 
+        printf("\n\n");
+
         /* Toda accion en la mazmorra genera un numero aleatorio para determinar si el jugador pierde vida. */
         generarAleatorio();
 
-        if (strcmp(entrada, "busq") == 0) {
-            printf("[Escogiste el comando de busqueda]\n");
-            return;
-        }
+        if (strcmp(entrada, "busq") == 0) buscarMazmorra();
         else if (strcmp(entrada, "atac") == 0) {
             printf("[Escogiste el comando de atacar]\n");
             return;
         }
         else if (strcmp(entrada, "ant") == 0) return;
         else if (strcmp(entrada, "sig") == 0) {siguienteAldea(); return;}      
-        else printf("\n[Comando no valido]\n\n");
+        else printf("[Comando no valido]\n\n\n");
     }
+}
+
+void buscarMazmorra() {
+    if (aldeaActual->yaBusco == 1) {jugador.vidas = jugador.vidas - 1; if (jugador.vidas == 0) gameOver(); printf("[Ya has buscado en esta mazmorra, pierdes 1 punto de vida]\n\n");}
+    if (aldeaActual->mazContiene == NULL) {
+        printf("[No hay ningun objeto en esta mazmorra]\n");
+        if (aldeaActual->nombre == aldeaOrigenDePana-> nombre) printf("[El item que derrota a la mazmorra de Luthadel se encuentra en la tienda]\n\n\n");
+        else if (aldeaActual->derrotadoPor->ubicacion->mazContiene != NULL) printf("[El item que derrota esta mazmorra se encuentra en la mazmorra %d: %s]\n\n\n", aldeaActual->nombre, indiceAldea(aldeaActual->derrotadoPor->ubicacion), aldeaActual->derrotadoPor->ubicacion->nombre);
+        else printf("[El item que derrota a esta mazmorra se encuentra en la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->derrotadoPor->ubicacion), aldeaActual->derrotadoPor->ubicacion->nombre);
+    }
+    else {
+        if (aldeaActual->mazContiene->encontrado == 1) {
+            printf("[Ya has encontrado %s]\n", aldeaActual->mazContiene->nombre);
+            printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->mazContiene->derrotaA), aldeaActual->mazContiene->derrotaA->nombre);
+        }
+        else {
+            aldeaActual->mazContiene->encontrado = 1;
+            printf("[Has encontrado %s]\n", aldeaActual->mazContiene->nombre);
+            printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->mazContiene->derrotaA), aldeaActual->mazContiene->derrotaA->nombre);
+        }        
+    }
+    aldeaActual->yaBusco = 1;
+    return;
 }
 
 void generarAleatorio() {
@@ -858,7 +896,7 @@ void generarAleatorio() {
     aleatorio = rand();
     if (aleatorio % 2 != 0) {
         jugador.vidas = jugador.vidas - 1;
-        printf("\n[Has perdido 1 punto de vida]\n\n");
+        printf("[Has perdido 1 punto de vida]\n\n\n");
         if (jugador.vidas == 0) gameOver();
     }
     return;
@@ -869,9 +907,27 @@ void gameOver() {
     exit(0);
 }
 
+void imprimirUbicaciones() {
+    printf("\n");
+    struct Aldea* temporal = aldeaActual;
+
+    while (temporal != NULL) {
+        printf("[Aldea %s]: %s\n[Mazmorra %s]: %s\n\n", 
+            temporal->nombre, 
+            (temporal->contiene != NULL) ? temporal->contiene->nombre : "Sin item",
+            temporal->nombre, 
+            (temporal->mazContiene != NULL) ? temporal->mazContiene->nombre : "Sin item");
+
+        temporal = temporal->siguiente;
+    }
+
+    printf("\n");
+    return;
+}
 
 int main(){
     inicializar();
+    imprimirUbicaciones();
     aldea();
     return 0;
 }
