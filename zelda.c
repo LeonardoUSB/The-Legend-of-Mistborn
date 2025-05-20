@@ -1,16 +1,26 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include <ctype.h>
 
+int dinero = 0;
+int aleatorio;
+int numAldea = 1;
+struct Aldea* aldeaActual = NULL;
+struct Jugador jugador;
+struct Item* itemOrigenDePana;
+struct Item* item;
 
-int potencia(int base, int exponente){
-    int resultado=1;
-    for (int i = 0; i < exponente; i++)
-    {
-        resultado*=base;
-    }
-    return resultado;
-}
+void comprar(); void anteriorAldea(); void siguienteAldea(); void gameOver(); void mazmorra(); void generarAleatorio(); void buscar();
+
+struct Jugador
+{
+    int vidas;
+    int corazones;
+    struct Aldea* ubicacion;
+    int estado;
+};
 
 struct Aldea
 {
@@ -21,13 +31,54 @@ struct Aldea
     struct Item* contiene;
     struct Item* mazContiene;
     int yaBusco;
-
 };
+
+struct AldeaParalela
+{
+    char* nombre;
+    struct AldeaParalela* siguiente;
+    struct AldeaParalela* anterior;
+    struct ItemParalelo* derrotadoPor;
+    struct ItemParalelo* contiene;
+    struct ItemParalelo* mazContiene;
+    int yaBusco;
+};
+
+struct Item
+{
+    char* nombre;
+    struct Item* siguiente;
+    struct Item* anterior;
+    int encontrado;
+    struct Aldea* ubicacion;
+    struct Aldea* derrotaA;
+};
+
+struct ItemParalelo
+{
+    char* nombre;
+    struct ItemParalelo* siguiente;
+    struct ItemParalelo* anterior;
+    int encontrado;
+    struct AldeaParalela* ubicacion;
+    struct AldeaParalela* derrotaA;
+};
+
+int potencia(int base, int exponente){
+    int resultado=1;
+    for (int i = 0; i < exponente; i++)
+    {
+        resultado*=base;
+    }
+    return resultado;
+}
+
+//Funciones para Colocar Nombres
 
 void creaNombresAldea(struct Aldea* cabeza,char**nombres,char**nuevosNombres,int tamNuevos,int profundidad){
     struct Aldea* siguiente= cabeza;
 
-    for (int i = 0; i < tamNuevos; i++)
+    for (int i = 0; i < tamNuevos; i++)                         //Asigna los nombres de la recursion pasada
     {
         siguiente->nombre=malloc(profundidad*15*sizeof(char));
         strcpy(siguiente->nombre, "");
@@ -38,7 +89,7 @@ void creaNombresAldea(struct Aldea* cabeza,char**nombres,char**nuevosNombres,int
             return;
         }
     }
-
+                                                                //Crea un arreglo que tendra las nuevas combinaciones de nombres
     profundidad++;
     int numCombinaciones= potencia(16, profundidad);
     char **combinaciones=malloc(numCombinaciones * sizeof(char*));
@@ -49,7 +100,7 @@ void creaNombresAldea(struct Aldea* cabeza,char**nombres,char**nuevosNombres,int
     }
     
     int k=0;
-
+                                                                //Genera las Combinaciones
     for (int i = 0; i < tamNuevos; i++)
     {
         for (int j = 0; j < 16; j++)
@@ -63,46 +114,15 @@ void creaNombresAldea(struct Aldea* cabeza,char**nombres,char**nuevosNombres,int
     
     creaNombresAldea(siguiente,nombres,combinaciones,numCombinaciones, profundidad );
 
-    for (int i = 0; i < numCombinaciones; i++) {
+    for (int i = 0; i < numCombinaciones; i++) {                //Libera la memoria creada
         free(combinaciones[i]);
     }
     free(combinaciones);
 }
 
-struct Aldea* crearListaAldeas(int numAldeas){
-    struct Aldea* cabeza =malloc(sizeof(struct Aldea));
-    cabeza->anterior=NULL;
-    cabeza->siguiente=NULL;
-
-    struct Aldea* nuevaAldea = cabeza;
-
-    for (size_t i = 0; i < numAldeas-1; i++)
-    {
-        
-        nuevaAldea->siguiente=malloc(sizeof(struct Aldea));
-        nuevaAldea->siguiente->anterior=nuevaAldea;
-        nuevaAldea=nuevaAldea->siguiente;
-        nuevaAldea->siguiente=NULL;
-
-    }
-    
-    return cabeza;
-}
-
-struct AldeaParalela
-{
-    char* nombre;
-    struct Aldea* siguiente;
-    struct Aldea* anterior;
-    struct Item* derrotadoPor;
-    struct Item* contiene;
-    struct Item* mazContiene;
-    int yaBusco;
-};
-
 void creaNombresAldeaAlter(struct AldeaParalela* cabeza,char**nombres,char**nuevosNombres,int tamNuevos,int profundidad){
     struct AldeaParalela* siguiente= cabeza;
-
+                                                                    //Explicacion se encuentra en creaNombresAldea
     for (int i = 0; i < tamNuevos; i++)
     {
         siguiente->nombre=malloc(profundidad*25*sizeof(char));
@@ -145,40 +165,9 @@ void creaNombresAldeaAlter(struct AldeaParalela* cabeza,char**nombres,char**nuev
     free(combinaciones);
 }
 
-struct AldeaParalela* crearListaAldeasParalelas(int numAldeas){
-    struct AldeaParalela* cabeza =malloc(sizeof(struct AldeaParalela));
-    cabeza->anterior=NULL;
-    cabeza->siguiente=NULL;
-
-    struct AldeaParalela* nuevaAldea = cabeza;
-
-    for (size_t i = 0; i < numAldeas-1; i++)
-    {
-        
-        nuevaAldea->siguiente=malloc(sizeof(struct AldeaParalela));
-        nuevaAldea->siguiente->anterior=nuevaAldea;
-        nuevaAldea=nuevaAldea->siguiente;
-        nuevaAldea->siguiente=NULL;
-
-    }
-    
-    return cabeza;
-}
-
-struct Item
-{
-    char* nombre;
-    struct Item* siguiente;
-    struct Item* anterior;
-    int encontrado;
-    struct Aldea* ubicacion;
-    struct Aldea* derrotaA;
-};
-
-
 void creaItems(struct Item* cabeza,char**nombres,char**nuevosNombres,int tamNuevos,int profundidad){
     struct Item* siguiente= cabeza;
-
+                                                                                    //Explicacion se encuentra en creaNombresAldea
     for (int i = 0; i < tamNuevos; i++)
     {
         siguiente->nombre=malloc(profundidad*15*sizeof(char));
@@ -221,40 +210,9 @@ void creaItems(struct Item* cabeza,char**nombres,char**nuevosNombres,int tamNuev
     free(combinaciones);
 }
 
-
-struct Item* crearListaItem(int numAldeas){
-    struct Item* cabeza =malloc(sizeof(struct Item));
-    cabeza->anterior=NULL;
-    cabeza->siguiente=NULL;
-
-    struct Item* nuevoItem = cabeza;
-
-    for (size_t i = 0; i < numAldeas-1; i++)
-    {
-        
-        nuevoItem->siguiente=malloc(sizeof(struct Item));
-        nuevoItem->siguiente->anterior=nuevoItem;
-        nuevoItem=nuevoItem->siguiente;
-        nuevoItem->siguiente=NULL;
-
-    }
-    
-    return cabeza;
-}
-
-struct ItemParalelo
-{
-    char* nombre;
-    struct Item* siguiente;
-    struct Item* anterior;
-    int encontrado;
-    struct Aldea* ubicacion;
-    struct Aldea* derrotaA;
-};
-
 void creaItemsAlter(struct ItemParalelo* cabeza,char**nombres,char**nuevosNombres,int tamNuevos,int profundidad){
     struct ItemParalelo* siguiente= cabeza;
-
+                                                                                //Explicacion se encuentra en creaNombresAldea
     for (int i = 0; i < tamNuevos; i++)
     {
         siguiente->nombre=malloc(profundidad*25*sizeof(char));
@@ -297,6 +255,66 @@ void creaItemsAlter(struct ItemParalelo* cabeza,char**nombres,char**nuevosNombre
     free(combinaciones);
 }
 
+//Funciones para crear las listas enlanzadas
+
+struct Aldea* crearListaAldeas(int numAldeas){
+    struct Aldea* cabeza =malloc(sizeof(struct Aldea));
+    cabeza->anterior=NULL;
+    cabeza->siguiente=NULL;
+
+    struct Aldea* nuevaAldea = cabeza;
+
+    for (size_t i = 0; i < numAldeas-1; i++)
+    {
+        
+        nuevaAldea->siguiente=malloc(sizeof(struct Aldea));
+        nuevaAldea->siguiente->anterior=nuevaAldea;
+        nuevaAldea=nuevaAldea->siguiente;
+        nuevaAldea->siguiente=NULL;
+
+    }
+    
+    return cabeza;
+}
+
+struct AldeaParalela* crearListaAldeasParalelas(int numAldeas){
+    struct AldeaParalela* cabeza =malloc(sizeof(struct AldeaParalela));
+    cabeza->anterior=NULL;
+    cabeza->siguiente=NULL;
+
+    struct AldeaParalela* nuevaAldea = cabeza;
+
+    for (size_t i = 0; i < numAldeas-1; i++)
+    {
+        
+        nuevaAldea->siguiente=malloc(sizeof(struct AldeaParalela));
+        nuevaAldea->siguiente->anterior=nuevaAldea;
+        nuevaAldea=nuevaAldea->siguiente;
+        nuevaAldea->siguiente=NULL;
+
+    }
+    
+    return cabeza;
+}
+
+struct Item* crearListaItem(int numAldeas){
+    struct Item* cabeza =malloc(sizeof(struct Item));
+    cabeza->anterior=NULL;
+    cabeza->siguiente=NULL;
+
+    struct Item* nuevoItem = cabeza;
+
+    for (size_t i = 0; i < numAldeas-1; i++)
+    {
+        nuevoItem->siguiente=malloc(sizeof(struct Item));
+        nuevoItem->siguiente->anterior=nuevoItem;
+        nuevoItem=nuevoItem->siguiente;
+        nuevoItem->siguiente=NULL;
+    }
+    
+    return cabeza;
+}
+
 struct ItemParalelo* crearListaItemAlter(int numAldeas){
     struct ItemParalelo* cabeza =malloc(sizeof(struct ItemParalelo));
     cabeza->anterior=NULL;
@@ -306,29 +324,21 @@ struct ItemParalelo* crearListaItemAlter(int numAldeas){
 
     for (size_t i = 0; i < numAldeas-1; i++)
     {
-        
         nuevoItem->siguiente=malloc(sizeof(struct ItemParalelo));
         nuevoItem->siguiente->anterior=nuevoItem;
         nuevoItem=nuevoItem->siguiente;
         nuevoItem->siguiente=NULL;
-
     }
     
     return cabeza;
 }
 
-struct Jugador
-{
-    int vidas;
-    struct Aldea*ubicacion;
-    int estado;
-};
-
+//Funciones para Ubicar los items y asignar a quien derrotan
 
 struct Aldea* encontrarAldea(struct  Aldea* AldeaIni, struct  Aldea* cabeza, struct  Item* ItemIni, int* cont){
     struct Aldea* AldeaSig=AldeaIni;
     if (AldeaSig==NULL)
-    {
+    {                                                               //Trabaja con todos los casos donde una aldea inadmisible aparece
         AldeaSig=cabeza;
         AldeaSig=encontrarAldea(AldeaSig, cabeza,ItemIni, cont);
         if(AldeaSig->contiene==NULL){
@@ -361,14 +371,50 @@ struct Aldea* encontrarAldea(struct  Aldea* AldeaIni, struct  Aldea* cabeza, str
 
 }
 
+struct AldeaParalela* encontrarAldeaAlter(struct  AldeaParalela* AldeaIni, struct  AldeaParalela* cabeza, struct  ItemParalelo* ItemIni, int* cont){
+    struct AldeaParalela* AldeaSig=AldeaIni;
+    if (AldeaSig==NULL)
+    {                                                                                    //Explicacion se encuentra en encontrar Aldea
+        AldeaSig=cabeza;
+        AldeaSig=encontrarAldeaAlter(AldeaSig, cabeza,ItemIni, cont);
+        if(AldeaSig->contiene==NULL){
+            AldeaSig->contiene=ItemIni;
+            ItemIni->ubicacion=AldeaSig;
+            ItemIni=ItemIni->siguiente;
+            (*cont)++;
+            AldeaSig=encontrarAldeaAlter(AldeaSig, cabeza, ItemIni, cont);
+        }
+        else{
+            AldeaSig->mazContiene=ItemIni;
+            ItemIni->ubicacion=AldeaSig;
+            ItemIni=ItemIni->siguiente;
+            (*cont)++;
+            AldeaSig=encontrarAldeaAlter(AldeaSig, cabeza, ItemIni, cont);
+        }
+        
+    }
+    
+    while((AldeaSig->contiene!=NULL && AldeaSig->mazContiene!=NULL) && AldeaSig->siguiente!=NULL){
+        AldeaSig=AldeaSig->siguiente;
+    }
+    if (AldeaSig->siguiente==NULL && AldeaSig->contiene==NULL && AldeaSig->mazContiene==NULL){
+        AldeaSig=cabeza;
+        encontrarAldeaAlter(AldeaSig, cabeza,ItemIni,cont);
+    }
+    else{
+        return AldeaSig;
+    }
+
+}
+
 void ubicaTodo(struct Aldea* cabeza,struct Item* ItemIni, int numAldeas){
     struct Aldea* aldeaSig=cabeza;
     struct Item* itemSig=ItemIni;
     int random;
     int cont=0;
     while(cont<numAldeas){
-        random=rand();
-        aldeaSig=encontrarAldea(aldeaSig,cabeza, itemSig,&cont);
+        random=rand();                          //Trabaja con cada caso posible
+        aldeaSig=encontrarAldea(aldeaSig,cabeza, itemSig,&cont); //Funcion que asegura que la aldea sea elegida
         
         if(random%2==0 && aldeaSig->contiene ==NULL){
             aldeaSig->contiene=itemSig;
@@ -396,9 +442,44 @@ void ubicaTodo(struct Aldea* cabeza,struct Item* ItemIni, int numAldeas){
     }
 }
 
+void ubicaTodoAlter(struct AldeaParalela* cabeza, struct ItemParalelo* ItemIni ,int numAldeas){
+    struct AldeaParalela* aldeaSig=cabeza;
+    struct ItemParalelo* itemSig=ItemIni;
+    int random;                                                 //Explicacion se Encuentra en UbicaTodo
+    int cont=0;
+    while(cont<numAldeas){
+        random=rand();
+        aldeaSig=encontrarAldeaAlter(aldeaSig,cabeza, itemSig,&cont);
+        
+        if(random%2==0 && aldeaSig->contiene ==NULL){
+            aldeaSig->contiene=itemSig;
+            itemSig->ubicacion=aldeaSig;
+
+            aldeaSig=aldeaSig->siguiente;
+            itemSig=itemSig->siguiente;
+            cont++;
+        }
+        else{
+            random=rand();
+            if(random%2==0 && aldeaSig->mazContiene ==NULL){
+                aldeaSig->contiene=itemSig;
+                itemSig->ubicacion=aldeaSig;
+
+                aldeaSig=aldeaSig->siguiente;
+                itemSig=itemSig->siguiente;
+                cont++;
+            }
+            else{
+                aldeaSig=aldeaSig->siguiente;
+            }
+        }
+
+    }
+};
+
 struct Item* encontrarItem(struct  Item* ItemIni,struct  Item* cabeza,struct  Aldea** AldeaIni, int* cont){
     struct Item* itemSig=ItemIni;
-
+                                                                     //Explicacion se encuentra en encontrar Aldea
     if(itemSig==NULL){
         itemSig=cabeza;
         itemSig=encontrarItem(itemSig, cabeza,AldeaIni,cont);
@@ -427,19 +508,45 @@ struct Item* encontrarItem(struct  Item* ItemIni,struct  Item* cabeza,struct  Al
 
 }
 
+struct ItemParalelo* encontrarItemAlter(struct  ItemParalelo* ItemIni,struct  ItemParalelo* cabeza,struct  AldeaParalela** AldeaIni, int* cont){
+    struct ItemParalelo* itemSig=ItemIni;
+                                                                            //Explicacion se encuentra en encontrar Aldea
+    if(itemSig==NULL){
+        itemSig=cabeza;
+        itemSig=encontrarItemAlter(itemSig, cabeza,AldeaIni,cont);
+        (*AldeaIni)->derrotadoPor=itemSig;
+        itemSig->derrotaA=(*AldeaIni);
+        (*AldeaIni)=(*AldeaIni)->siguiente;
+        (*cont)++;
+        if ((*AldeaIni)==NULL){
+            return NULL;
+        }
+        itemSig=encontrarItemAlter(itemSig, cabeza,AldeaIni,cont);
+    }
+
+    while(itemSig->derrotaA!=NULL && itemSig->siguiente!=NULL){
+        itemSig=itemSig->siguiente;
+    }
+    if (itemSig->siguiente ==NULL && itemSig->derrotaA!=NULL){
+        itemSig=cabeza;
+        encontrarItemAlter(itemSig, cabeza,AldeaIni,cont);
+    }
+    else{
+        
+
+        return itemSig;
+    }
+
+}
+
 void derrotaTodo(struct Aldea* cabeza,struct Item* ItemIni, int numAldeas){
     struct Aldea* aldeaSig=cabeza;
     struct Item* itemSig=ItemIni;
     struct Aldea** punAldea=&aldeaSig;
     int random;
     int cont=0;
-    //int i=0;
     while(cont<numAldeas){
-        random=rand();
-        //int num[]={1724200880,819850994,1019632478,34542735,360296537,568650271,1228424318,};
-        //random=num[i];
-        //i++;
-        //printf("%d\n", random);
+        random=rand(); 
         itemSig=encontrarItem(itemSig,ItemIni,punAldea,&cont);
         if (aldeaSig==NULL){
             break;
@@ -457,43 +564,34 @@ void derrotaTodo(struct Aldea* cabeza,struct Item* ItemIni, int numAldeas){
     }
 }
 
-/*
-void ubicaTodoAlter(struct AldeaParalela* cabeza, struct ItemParalelo* ItemIni ,int numAldeas){
+void derrotaTodoAlter(struct AldeaParalela* cabeza,struct ItemParalelo* ItemIni, int numAldeas){
     struct AldeaParalela* aldeaSig=cabeza;
     struct ItemParalelo* itemSig=ItemIni;
+    struct AldeaParalela** punAldea=&aldeaSig;
     int random;
     int cont=0;
     while(cont<numAldeas){
-        random=rand();
-        aldeaSig=encontrarAldea(aldeaSig,cabeza, itemSig,&cont);
-        
-        if(random%2==0 && aldeaSig->contiene ==NULL){
-            aldeaSig->contiene=itemSig;
-            itemSig->ubicacion=aldeaSig;
-
+        random=rand(); 
+        itemSig=encontrarItemAlter(itemSig,ItemIni,punAldea,&cont);
+        if (aldeaSig==NULL){
+            break;
+        }
+        if(random%2==0){
+            aldeaSig->derrotadoPor=itemSig;
+            itemSig->derrotaA=aldeaSig;
             aldeaSig=aldeaSig->siguiente;
             itemSig=itemSig->siguiente;
             cont++;
         }
         else{
-            random=rand();
-            if(random%2==0 && aldeaSig->mazContiene ==NULL){
-                aldeaSig->contiene=itemSig;
-                itemSig->ubicacion=aldeaSig;
-
-                aldeaSig=aldeaSig->siguiente;
-                itemSig=itemSig->siguiente;
-                cont++;
-            }
-            else{
-                aldeaSig=aldeaSig->siguiente;
-            }
+            itemSig=itemSig->siguiente;
         }
-
     }
 };
-*/
 
+//Funciones Generales
+
+/*
 void imprimeTodo(struct Aldea* cabeza, struct AldeaParalela* cabeazaAlter, struct Item* ItemIni,  struct ItemParalelo* ItemIniAlter){
     struct Aldea* siguiente= cabeza;
     while(siguiente !=NULL){
@@ -508,40 +606,42 @@ void imprimeTodo(struct Aldea* cabeza, struct AldeaParalela* cabeazaAlter, struc
     }
 
     struct Item* siguienteItem= ItemIni;
-    int i=0;
-    printf("%s\n", "Modo Impresion");   
+       
     while(siguienteItem !=NULL){
         
-        printf("%d\n",i );
-        printf("%s\n", siguienteItem->nombre);
-        printf("%s\n", siguienteItem->derrotaA->nombre);
+        //printf("%s\n", siguienteItem->nombre);
         siguienteItem=siguienteItem->siguiente;
-        i++;
+       
     }
 
     struct ItemParalelo* siguienteItemAlter= ItemIniAlter;
     while(siguienteItemAlter !=NULL){
-        //printf("%s\n", siguienteItemAlter->nombre);
+        printf("%s\n", siguienteItemAlter->nombre);
+        printf("%s\n", siguienteItemAlter->derrotaA->nombre);
         siguienteItemAlter=siguienteItemAlter->siguiente;
     }
 }
-
+*/
 
 void inicializar(){
                                                         //Pedimos las aldeas
     printf("Bienvenido a Zelda\n");
-    printf("Por favor indica el nùmero de aldeas\n");
+    printf("Por favor indica el numero de aldeas:\n");
     int numAldeas;
     scanf("%d",&numAldeas);
                                                         //Inicializamos las estructuas
-    struct Jugador jugador;
-    jugador.vidas=3;
+    jugador.corazones = 3;
+    jugador.vidas = 3;
 
     struct Aldea* aldeaOrigen=crearListaAldeas(numAldeas);
     struct AldeaParalela* aldeaParalelaOrigen=crearListaAldeasParalelas(numAldeas);
     struct Item* itemOrigen=crearListaItem(numAldeas);
     struct ItemParalelo* itemParaleloOrigen=crearListaItemAlter(numAldeas);
     
+    aldeaActual = aldeaOrigen;
+    //itemOrigen->encontrado = 0;
+    item = itemOrigen;
+    itemOrigenDePana = itemOrigen;
 
     char**nomAldeas=malloc(16 * sizeof(char*));
     for (int i = 0; i < 16; i++)
@@ -550,7 +650,7 @@ void inicializar(){
     }
     strcpy(nomAldeas[0], "Luthadel");
     strcpy(nomAldeas[1], "Elendel");
-    strcpy(nomAldeas[2], "Rochelle");
+    strcpy(nomAldeas[2], "Urteau");
     strcpy(nomAldeas[3], "Fadrex");
     strcpy(nomAldeas[4], "Urbain");
     strcpy(nomAldeas[5], "Doxonar");
@@ -578,7 +678,7 @@ void inicializar(){
     strcpy(nomAldeas[7], "Bronce");
     strcpy(nomAldeas[8], "Aluminio");
     strcpy(nomAldeas[9], "Duraluminio");
-    strcpy(nomAldeas[10], "Cromo");
+    strcpy(nomAldeas[10], "Bendaleo");
     strcpy(nomAldeas[11], "Cadmio");
     strcpy(nomAldeas[12], "Oro");
     strcpy(nomAldeas[13], "Electrum");
@@ -597,18 +697,181 @@ void inicializar(){
     ubicaTodo(aldeaOrigen,itemOrigen,numAldeas);  
     derrotaTodo(aldeaOrigen,itemOrigen,numAldeas); 
 
-    //ubicaTodoAlter(aldeaParalelaOrigen,itemParaleloOrigen,numAldeas);
-    //derrotaTodoAlter(aldeaParalelaOrigen,itemParaleloOrigen,numAldeas);
-    imprimeTodo(aldeaOrigen, aldeaParalelaOrigen, itemOrigen, itemParaleloOrigen);
+    ubicaTodoAlter(aldeaParalelaOrigen,itemParaleloOrigen,numAldeas);
+    derrotaTodoAlter(aldeaParalelaOrigen,itemParaleloOrigen,numAldeas);
+    //imprimeTodo(aldeaOrigen, aldeaParalelaOrigen, itemOrigen, itemParaleloOrigen);
 
-    
+    return;
+}
+
+void aldea() {
+    int i;
+    char entrada[6];
+
+    while (1) {
+        printf("\nBienvenido a la aldea %d: %s\n\n", numAldea, aldeaActual->nombre);
+        printf("Comandos disponibles:\n");
+        /* Aqui en el if debe ir la condicion de que se imprime la lista de comandos incluyendo "trans" solo si
+        El jugador ya derrotó la mazmorra que le permite transportarse al mundo paralelo. */
+        if (15 > 70) printf("------------------------------------------\n| busq | maz | compr | trans | ant | sig |\n------------------------------------------\n\n");
+        else {printf("----------------------------------\n| busq | maz | compr | ant | sig |\n----------------------------------\n"); printf("| Corazones:%d | Vida:%d | Dinero:%d |\n", jugador.corazones, jugador.vidas, dinero); printf("----------------------------------\n\n");}
+        printf("Ingrese un comando:\n");
+
+        /* Almacena la entrada por teclado en el arreglo "entrada". */
+        scanf("%6s", entrada);
+
+        /* Convierte todos los caracteres de la entrada en minusculas. */
+        for (i = 0; entrada[i] != '\0'; i++) entrada[i] = tolower(entrada[i]);
+
+        if (strcmp(entrada, "busq") == 0) buscar();
+        else if (strcmp(entrada, "maz") == 0) mazmorra();
+        else if (strcmp(entrada, "compr") == 0) comprar();
+        else if (strcmp(entrada, "trans") == 0 && 70>15) {
+            printf("[Escogiste el comando de transportar]\n");
+            return;
+        }
+        else if (strcmp(entrada, "ant") == 0) anteriorAldea();
+        else if (strcmp(entrada, "sig") == 0) siguienteAldea();
+        else if (strcmp(entrada, "+") == 0) dinero = dinero + 100;
+        else if (strcmp(entrada, "-") == 0) dinero = 0;            
+        else printf("\n[Comando no valido]\n\n");
+    }
+}
+
+void buscar() {
+    if (aldeaActual->contiene == NULL) {
+        printf("[No hay ningun objeto en esta aldea]\n");
+        printf("[El item derrota a la mazmorra de esta aldea se encuentra en %s]\n", aldeaActual->derrotadoPor->ubicacion->nombre);
+    }
+    else {
+        if (aldeaActual->contiene->encontrado == 1) {
+            printf("[Ya has encontrado %s]\n", aldeaActual->contiene->nombre);
+            printf("[Este item derrota a la mazmorra de la aldea %s]\n", aldeaActual->contiene->derrotaA->nombre);
+        }
+        else {
+            aldeaActual->yaBusco = 1;
+            aldeaActual->contiene->encontrado = 1;
+            printf("[Has encontrado %s]\n", aldeaActual->contiene->nombre);
+            printf("[Este item derrota a la mazmorra de la aldea %s]\n", aldeaActual->contiene->derrotaA->nombre);
+        }        
+    }   
+    return;
+}
 
 
-    
+void anteriorAldea() {
+    if (aldeaActual->anterior == NULL) printf("\n[Estas en la primera aldea]\n\n");
+    else {
+        aldeaActual = aldeaActual->anterior;
+        numAldea = numAldea - 1;
+        dinero = dinero + 10;
+        generarAleatorio();
+    }
+
+    return;
+}
+
+void siguienteAldea() {
+    if (aldeaActual->siguiente == NULL) printf("\n[Estas en la ultima aldea]\n\n");
+    else {
+        aldeaActual = aldeaActual->siguiente;
+        numAldea = numAldea + 1;
+        dinero = dinero + 10;
+        generarAleatorio();
+    }
+
+    return;
+}
+
+void comprar() {
+    char entrada[2];
+
+    while (1) {
+        printf("\n[TIENDA]\n");
+        printf("1) Recuperar 1 punto de vida: $5\n");
+        printf("2) %s: $25\n", item->nombre);
+        printf("3) Corazon adicional: $100\n");
+        printf("4) Salir\n\n");
+        printf("Dinero actual: $%d\n", dinero);
+        printf("Ingrese el numero del item que desee comprar:\n");
+
+        /* Limpia el bufer. */
+        while (getchar() != '\n');
+
+        /* Almacena la entrada por teclado en el arreglo "entrada". */
+        scanf("%1s", entrada);
+
+        if (strcmp(entrada, "1") == 0) {
+            if(dinero >= 5) {if (jugador.vidas < jugador.corazones) {dinero = dinero - 5; jugador.vidas = jugador.vidas + 1; printf("\nVida actual: %d\n\n", jugador.vidas); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();} else {printf("\n[Ya estas al maximo de vida]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}}
+            else {printf("\n[No tienes suficiente dinero]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}
+        }
+        else if (strcmp(entrada, "2") == 0) {
+            if(dinero >= 25) {if (itemOrigenDePana->encontrado == 0) {dinero = dinero - 25; itemOrigenDePana->encontrado = 1; printf("\n[Compraste %s]\n\n", itemOrigenDePana->nombre); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();} else {printf("\n[Ya tienes el objeto]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}}
+            else {printf("\n[No tienes suficiente dinero]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}
+        }
+        else if (strcmp(entrada, "3") == 0) {
+            if(dinero >= 100) {if (jugador.corazones < 127) {dinero = dinero - 100; jugador.corazones = jugador.corazones + 1; jugador.vidas = jugador.corazones; printf("\nCorazones actuales: %d\n\n", jugador.corazones); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();} else {printf("\n[Ya tienes la maxima cantidad de corazones]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}}
+            else {printf("\n[No tienes suficiente dinero]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}
+        }
+        else if (strcmp(entrada, "4") == 0) return;
+        else {printf("\n[Opcion no valida]\n\n"); printf("Presiona cualquier tecla para continuar...\n"); while (getchar() != '\n'); getchar();}
+    }
+}
+
+void mazmorra() {
+    int i;
+    char entrada[5];
+
+    while (1) {
+        printf("\nBienvenido a la mazmorra de la aldea %s\n\n", aldeaActual->nombre);
+        printf("Comandos disponibles:\n");        
+        printf("----------------------------------\n| busq | atac | ant | sig |\n----------------------------------\n"); 
+        printf("| Corazones:%d | Vida:%d | Dinero:%d |\n", jugador.corazones, jugador.vidas, dinero); 
+        printf("----------------------------------\n\n");
+        printf("Ingrese un comando:\n");
+
+        /* Almacena la entrada por teclado en el arreglo "entrada". */
+        scanf("%5s", entrada);
+
+        /* Convierte todos los caracteres de la entrada en minusculas. */
+        for (i = 0; entrada[i] != '\0'; i++) entrada[i] = tolower(entrada[i]);
+
+        /* Toda accion en la mazmorra genera un numero aleatorio para determinar si el jugador pierde vida. */
+        generarAleatorio();
+
+        if (strcmp(entrada, "busq") == 0) {
+            printf("[Escogiste el comando de busqueda]\n");
+            return;
+        }
+        else if (strcmp(entrada, "atac") == 0) {
+            printf("[Escogiste el comando de atacar]\n");
+            return;
+        }
+        else if (strcmp(entrada, "ant") == 0) return;
+        else if (strcmp(entrada, "sig") == 0) {siguienteAldea(); return;}      
+        else printf("\n[Comando no valido]\n\n");
+    }
+}
+
+void generarAleatorio() {
+    srand(time(NULL));
+    aleatorio = rand();
+    if (aleatorio % 2 != 0) {
+        jugador.vidas = jugador.vidas - 1;
+        printf("\n[Has perdido 1 punto de vida]\n\n");
+        if (jugador.vidas == 0) gameOver();
+    }
+    return;
+}
+
+void gameOver() {
+    printf("\nTE HAS MORIDO\n");
+    exit(0);
 }
 
 
 int main(){
     inicializar();
+    aldea();
+    return 0;
 }
-
