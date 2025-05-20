@@ -15,12 +15,9 @@ int potencia(int base, int exponente){
 struct Aldea
 {
     char* nombre;
-
     struct Aldea* siguiente;
     struct Aldea* anterior;
-
     struct Item* derrotadoPor;
-
     struct Item* contiene;
     struct Item* mazContiene;
     int yaBusco;
@@ -73,19 +70,16 @@ void creaNombresAldea(struct Aldea* cabeza,char**nombres,char**nuevosNombres,int
 }
 
 struct Aldea* crearListaAldeas(int numAldeas){
-    
-    struct Aldea* cabeza = malloc(sizeof(struct Aldea));
-
+    struct Aldea* cabeza =malloc(sizeof(struct Aldea));
     cabeza->anterior=NULL;
     cabeza->siguiente=NULL;
 
     struct Aldea* nuevaAldea = cabeza;
-    
-    for (int i = 0; i < numAldeas-1; i++)
+
+    for (size_t i = 0; i < numAldeas-1; i++)
     {
         
         nuevaAldea->siguiente=malloc(sizeof(struct Aldea));
-
         nuevaAldea->siguiente->anterior=nuevaAldea;
         nuevaAldea=nuevaAldea->siguiente;
         nuevaAldea->siguiente=NULL;
@@ -98,8 +92,12 @@ struct Aldea* crearListaAldeas(int numAldeas){
 struct AldeaParalela
 {
     char* nombre;
-    struct AldeaParalela* siguiente;
-    struct AldeaParalela* anterior;
+    struct Aldea* siguiente;
+    struct Aldea* anterior;
+    struct Item* derrotadoPor;
+    struct Item* contiene;
+    struct Item* mazContiene;
+    int yaBusco;
 };
 
 void creaNombresAldeaAlter(struct AldeaParalela* cabeza,char**nombres,char**nuevosNombres,int tamNuevos,int profundidad){
@@ -247,8 +245,11 @@ struct Item* crearListaItem(int numAldeas){
 struct ItemParalelo
 {
     char* nombre;
-    struct ItemParalelo* siguiente;
-    struct ItemParalelo* anterior;
+    struct Item* siguiente;
+    struct Item* anterior;
+    int encontrado;
+    struct Aldea* ubicacion;
+    struct Aldea* derrotaA;
 };
 
 void creaItemsAlter(struct ItemParalelo* cabeza,char**nombres,char**nuevosNombres,int tamNuevos,int profundidad){
@@ -322,6 +323,7 @@ struct Jugador
     struct Aldea*ubicacion;
     int estado;
 };
+
 
 struct Aldea* encontrarAldea(struct  Aldea* AldeaIni, struct  Aldea* cabeza, struct  Item* ItemIni, int* cont){
     struct Aldea* AldeaSig=AldeaIni;
@@ -404,13 +406,16 @@ struct Item* encontrarItem(struct  Item* ItemIni,struct  Item* cabeza,struct  Al
         itemSig->derrotaA=(*AldeaIni);
         (*AldeaIni)=(*AldeaIni)->siguiente;
         (*cont)++;
+        if ((*AldeaIni)==NULL){
+            return NULL;
+        }
         itemSig=encontrarItem(itemSig, cabeza,AldeaIni,cont);
     }
 
     while(itemSig->derrotaA!=NULL && itemSig->siguiente!=NULL){
         itemSig=itemSig->siguiente;
     }
-    if (itemSig->siguiente==NULL && itemSig->ubicacion==NULL){
+    if (itemSig->siguiente ==NULL && itemSig->derrotaA!=NULL){
         itemSig=cabeza;
         encontrarItem(itemSig, cabeza,AldeaIni,cont);
     }
@@ -428,9 +433,17 @@ void derrotaTodo(struct Aldea* cabeza,struct Item* ItemIni, int numAldeas){
     struct Aldea** punAldea=&aldeaSig;
     int random;
     int cont=0;
+    //int i=0;
     while(cont<numAldeas){
         random=rand();
+        //int num[]={1724200880,819850994,1019632478,34542735,360296537,568650271,1228424318,};
+        //random=num[i];
+        //i++;
+        //printf("%d\n", random);
         itemSig=encontrarItem(itemSig,ItemIni,punAldea,&cont);
+        if (aldeaSig==NULL){
+            break;
+        }
         if(random%2==0){
             aldeaSig->derrotadoPor=itemSig;
             itemSig->derrotaA=aldeaSig;
@@ -443,6 +456,43 @@ void derrotaTodo(struct Aldea* cabeza,struct Item* ItemIni, int numAldeas){
         }
     }
 }
+
+/*
+void ubicaTodoAlter(struct AldeaParalela* cabeza, struct ItemParalelo* ItemIni ,int numAldeas){
+    struct AldeaParalela* aldeaSig=cabeza;
+    struct ItemParalelo* itemSig=ItemIni;
+    int random;
+    int cont=0;
+    while(cont<numAldeas){
+        random=rand();
+        aldeaSig=encontrarAldea(aldeaSig,cabeza, itemSig,&cont);
+        
+        if(random%2==0 && aldeaSig->contiene ==NULL){
+            aldeaSig->contiene=itemSig;
+            itemSig->ubicacion=aldeaSig;
+
+            aldeaSig=aldeaSig->siguiente;
+            itemSig=itemSig->siguiente;
+            cont++;
+        }
+        else{
+            random=rand();
+            if(random%2==0 && aldeaSig->mazContiene ==NULL){
+                aldeaSig->contiene=itemSig;
+                itemSig->ubicacion=aldeaSig;
+
+                aldeaSig=aldeaSig->siguiente;
+                itemSig=itemSig->siguiente;
+                cont++;
+            }
+            else{
+                aldeaSig=aldeaSig->siguiente;
+            }
+        }
+
+    }
+};
+*/
 
 void imprimeTodo(struct Aldea* cabeza, struct AldeaParalela* cabeazaAlter, struct Item* ItemIni,  struct ItemParalelo* ItemIniAlter){
     struct Aldea* siguiente= cabeza;
@@ -459,8 +509,9 @@ void imprimeTodo(struct Aldea* cabeza, struct AldeaParalela* cabeazaAlter, struc
 
     struct Item* siguienteItem= ItemIni;
     int i=0;
+    printf("%s\n", "Modo Impresion");   
     while(siguienteItem !=NULL){
-
+        
         printf("%d\n",i );
         printf("%s\n", siguienteItem->nombre);
         printf("%s\n", siguienteItem->derrotaA->nombre);
@@ -479,9 +530,9 @@ void imprimeTodo(struct Aldea* cabeza, struct AldeaParalela* cabeazaAlter, struc
 void inicializar(){
                                                         //Pedimos las aldeas
     printf("Bienvenido a Zelda\n");
-    printf("Por favor indica el numero de aldeas\n");
+    printf("Por favor indica el nùmero de aldeas\n");
     int numAldeas;
-    scanf("%d",numAldeas);
+    scanf("%d",&numAldeas);
                                                         //Inicializamos las estructuas
     struct Jugador jugador;
     jugador.vidas=3;
@@ -491,7 +542,6 @@ void inicializar(){
     struct Item* itemOrigen=crearListaItem(numAldeas);
     struct ItemParalelo* itemParaleloOrigen=crearListaItemAlter(numAldeas);
     
-    char*nombres = malloc(20*sizeof(char));
 
     char**nomAldeas=malloc(16 * sizeof(char*));
     for (int i = 0; i < 16; i++)
@@ -544,10 +594,11 @@ void inicializar(){
     free(nomAldeas);
 
     srand(time(NULL));
-
     ubicaTodo(aldeaOrigen,itemOrigen,numAldeas);  
     derrotaTodo(aldeaOrigen,itemOrigen,numAldeas); 
 
+    //ubicaTodoAlter(aldeaParalelaOrigen,itemParaleloOrigen,numAldeas);
+    //derrotaTodoAlter(aldeaParalelaOrigen,itemParaleloOrigen,numAldeas);
     imprimeTodo(aldeaOrigen, aldeaParalelaOrigen, itemOrigen, itemParaleloOrigen);
 
     
@@ -559,7 +610,5 @@ void inicializar(){
 
 int main(){
     inicializar();
-    
-    
 }
 
