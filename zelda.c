@@ -892,7 +892,6 @@ void buscarMazmorra() {
 }
 
 void generarAleatorio() {
-    srand(time(NULL));
     aleatorio = rand();
     if (aleatorio % 2 != 0) {
         jugador.vidas = jugador.vidas - 1;
