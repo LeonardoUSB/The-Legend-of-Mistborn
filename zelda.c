@@ -6,21 +6,25 @@
 
 int dinero = 0;
 int aleatorio;
+int transportaParalelo;
+int aldeasTotales;
 struct Jugador jugador;
 struct Aldea* aldeaActual = NULL;
 struct Aldea* aldeaOrigenDePana = NULL;
+struct AldeaParalela* aldeaActualParalela = NULL;
 struct AldeaParalela* aldeaParalelaOrigenDePana = NULL;
 struct Item* itemOrigenDePana;
 struct Item* item;
 
-void comprar(); void anteriorAldea(); void siguienteAldea(); void gameOver(); void mazmorra(); void generarAleatorio(); void buscar(); void buscarMazmorra(); int indiceAldea();
+void comprar(); void anteriorAldea(); void siguienteAldea(); void gameOver(); void mazmorra(); void generarAleatorio(); void buscar(); void buscarMazmorra(); int indiceAldea(); void atacar(); void victoria();
 
 struct Jugador
 {
     int vidas;
     int corazones;
     struct Aldea* ubicacion;
-    int estado;
+    int mazmorrasVencidas;
+    int paralelo;
 };
 
 struct Aldea
@@ -31,6 +35,7 @@ struct Aldea
     struct Item* derrotadoPor;
     struct Item* contiene;
     struct Item* mazContiene;
+    int vencida;
     int yaBusco;
 };
 
@@ -42,6 +47,7 @@ struct AldeaParalela
     struct ItemParalelo* derrotadoPor;
     struct ItemParalelo* contiene;
     struct ItemParalelo* mazContiene;
+    int vencida;
     int yaBusco;
 };
 
@@ -619,15 +625,16 @@ void imprimeTodo(struct Aldea* cabeza, struct AldeaParalela* cabeazaAlter, struc
 */
 
 void inicializar(){
-                                                        //Pedimos las aldeas
-    printf("Bienvenido a Zelda\n");
-    printf("Por favor indica el numero de aldeas:\n");
     int numAldeas;
-    scanf("%d",&numAldeas);
-                                                        //Inicializamos las estructuas
     jugador.corazones = 3;
     jugador.vidas = 3;
 
+    // Pedimos las aldeas
+    printf("Bienvenido a Zelda\n");
+    printf("Por favor indica el numero de aldeas:\n");
+    scanf("%d",&numAldeas);
+    
+    // Inicializamos las estructuras
     struct Aldea* aldeaOrigen=crearListaAldeas(numAldeas);
     struct AldeaParalela* aldeaParalelaOrigen=crearListaAldeasParalelas(numAldeas);
     struct Item* itemOrigen=crearListaItem(numAldeas);
@@ -693,9 +700,13 @@ void inicializar(){
 
     aldeaActual = aldeaOrigen;
     aldeaOrigenDePana = aldeaOrigen;
+    aldeaActualParalela = aldeaParalelaOrigen;
     aldeaParalelaOrigenDePana = aldeaParalelaOrigen;
     item = itemOrigen;
     itemOrigenDePana = itemOrigen;
+    aldeasTotales = 2*numAldeas;
+
+    transportaParalelo = (rand() % (numAldeas - 1 + 1)) + 1;
 
     printf("\n\n");
 
@@ -831,7 +842,6 @@ while (getchar() != '\n');
 getchar();*/
 
 void mazmorra() {
-    int i;
     char entrada[5];
 
     while (1) {
@@ -846,7 +856,7 @@ void mazmorra() {
         scanf("%5s", entrada);
 
         /* Convierte todos los caracteres de la entrada en minusculas. */
-        for (i = 0; entrada[i] != '\0'; i++) entrada[i] = tolower(entrada[i]);
+        for (int i = 0; entrada[i] != '\0'; i++) entrada[i] = tolower(entrada[i]);
 
         printf("\n\n");
 
@@ -854,10 +864,7 @@ void mazmorra() {
         generarAleatorio();
 
         if (strcmp(entrada, "busq") == 0) buscarMazmorra();
-        else if (strcmp(entrada, "atac") == 0) {
-            printf("[Escogiste el comando de atacar]\n");
-            return;
-        }
+        else if (strcmp(entrada, "atac") == 0) atacar();
         else if (strcmp(entrada, "ant") == 0) return;
         else if (strcmp(entrada, "sig") == 0) {siguienteAldea(); return;}      
         else printf("[Comando no valido]\n\n\n");
@@ -865,7 +872,7 @@ void mazmorra() {
 }
 
 void buscarMazmorra() {
-    if (aldeaActual->yaBusco == 1) {jugador.vidas = jugador.vidas - 1; if (jugador.vidas == 0) gameOver(); printf("[Ya has buscado en esta mazmorra, pierdes 1 punto de vida]\n\n");}
+    if (aldeaActual->yaBusco == 1) {printf("[Ya has buscado en esta mazmorra, pierdes 1 punto de vida]\n\n"); jugador.vidas = jugador.vidas - 1; if (jugador.vidas == 0) gameOver();}
     if (aldeaActual->mazContiene == NULL) {
         printf("[No hay ningun objeto en esta mazmorra]\n");
         if (aldeaActual->nombre == aldeaOrigenDePana-> nombre) printf("[El item que derrota a la mazmorra de Luthadel se encuentra en la tienda]\n\n\n");
@@ -887,6 +894,32 @@ void buscarMazmorra() {
     return;
 }
 
+
+void atacar() {
+    if (aldeaActual->derrotadoPor->encontrado == 1 || aldeaActualParalela->derrotadoPor->encontrado == 1) {
+        if (aldeaActual->vencida == 0 || aldeaActualParalela->vencida == 0) {
+            jugador.mazmorrasVencidas = jugador.mazmorrasVencidas + 1;
+            if (jugador.paralelo == 0) aldeaActual->vencida = 1;
+            else aldeaActualParalela->vencida = 1;
+            printf("[¡Has derrotado a la mazmorra!]\n\n");
+            if (jugador.mazmorrasVencidas == aldeasTotales) victoria();
+            if (indiceAldea(aldeaActual) == transportaParalelo) {
+                printf("\n[Encuentras un pozo pequeño y de pocos metros de profundidad]\n[Empiezas a sentir unas ligeras pulsaciones]\n[El pozo te llama...]\n[Como hipnotizado, tus pies se mueven y te sumerges en las aguas]\n[Se te bruma la vista y pierdes la consciencia]\n\n\n[Despiertas en un lugar conocido]\n\n\n[Miras a tu alrededor y te das cuenta que estas en Luthadel]\n\n\n[... Pero no es Luthadel]\n\n\n[BIENVENIDO A SHADESMAR]\n\n\n");
+                jugador.paralelo = 1;
+            }
+        }
+        else printf("[Ya has derrotado a esta mazmorra]\n\n");
+    }
+    else {
+        printf("[No posees el item para derrotar a esta mazmorra]\n[Pierdes 1 punto de vida]\n\n");
+        jugador.vidas = jugador.vidas - 1; 
+        if (jugador.vidas == 0) gameOver();
+    }
+
+    return;
+}
+
+
 void generarAleatorio() {
     aleatorio = rand();
     if (aleatorio % 2 != 0) {
@@ -897,10 +930,18 @@ void generarAleatorio() {
     return;
 }
 
+
 void gameOver() {
     printf("\nTE HAS MORIDO\n");
     exit(0);
 }
+
+
+void victoria() {
+    printf("\nHas ganao\n");
+    exit(0);    
+}
+
 
 void imprimirUbicaciones() {
     printf("\n");
