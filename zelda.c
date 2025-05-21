@@ -9,6 +9,7 @@ int aleatorio;
 struct Jugador jugador;
 struct Aldea* aldeaActual = NULL;
 struct Aldea* aldeaOrigenDePana = NULL;
+struct AldeaParalela* aldeaParalelaOrigenDePana = NULL;
 struct Item* itemOrigenDePana;
 struct Item* item;
 
@@ -391,7 +392,6 @@ struct AldeaParalela* encontrarAldeaAlter(struct  AldeaParalela* AldeaIni, struc
             (*cont)++;
             AldeaSig=encontrarAldeaAlter(AldeaSig, cabeza, ItemIni, cont);
         }
-        
     }
     
     while((AldeaSig->contiene!=NULL && AldeaSig->mazContiene!=NULL) && AldeaSig->siguiente!=NULL){
@@ -404,7 +404,6 @@ struct AldeaParalela* encontrarAldeaAlter(struct  AldeaParalela* AldeaIni, struc
     else{
         return AldeaSig;
     }
-
 }
 
 void ubicaTodo(struct Aldea* cabeza,struct Item* ItemIni, int numAldeas){
@@ -438,7 +437,6 @@ void ubicaTodo(struct Aldea* cabeza,struct Item* ItemIni, int numAldeas){
                 aldeaSig=aldeaSig->siguiente;
             }
         }
-
     }
 }
 
@@ -451,7 +449,7 @@ void ubicaTodoAlter(struct AldeaParalela* cabeza, struct ItemParalelo* ItemIni ,
         random=rand();
         aldeaSig=encontrarAldeaAlter(aldeaSig,cabeza, itemSig,&cont);
         
-        if(random%2==0 && aldeaSig->contiene ==NULL){
+        if(random%2==0 && aldeaSig->contiene == NULL){
             aldeaSig->contiene=itemSig;
             itemSig->ubicacion=aldeaSig;
 
@@ -461,8 +459,8 @@ void ubicaTodoAlter(struct AldeaParalela* cabeza, struct ItemParalelo* ItemIni ,
         }
         else{
             random=rand();
-            if(random%2==0 && aldeaSig->mazContiene ==NULL){
-                aldeaSig->contiene=itemSig;
+            if(random%2==0 && aldeaSig->mazContiene == NULL){
+                aldeaSig->mazContiene=itemSig;
                 itemSig->ubicacion=aldeaSig;
 
                 aldeaSig=aldeaSig->siguiente;
@@ -473,7 +471,6 @@ void ubicaTodoAlter(struct AldeaParalela* cabeza, struct ItemParalelo* ItemIni ,
                 aldeaSig=aldeaSig->siguiente;
             }
         }
-
     }
 };
 
@@ -505,7 +502,6 @@ struct Item* encontrarItem(struct  Item* ItemIni,struct  Item* cabeza,struct  Al
 
         return itemSig;
     }
-
 }
 
 struct ItemParalelo* encontrarItemAlter(struct  ItemParalelo* ItemIni,struct  ItemParalelo* cabeza,struct  AldeaParalela** AldeaIni, int* cont){
@@ -536,7 +532,6 @@ struct ItemParalelo* encontrarItemAlter(struct  ItemParalelo* ItemIni,struct  It
 
         return itemSig;
     }
-
 }
 
 void derrotaTodo(struct Aldea* cabeza,struct Item* ItemIni, int numAldeas){
@@ -573,7 +568,7 @@ void derrotaTodoAlter(struct AldeaParalela* cabeza,struct ItemParalelo* ItemIni,
     while(cont<numAldeas){
         random=rand(); 
         itemSig=encontrarItemAlter(itemSig,ItemIni,punAldea,&cont);
-        if (aldeaSig==NULL){
+        if (aldeaSig == NULL){
             break;
         }
         if(random%2==0){
@@ -698,6 +693,7 @@ void inicializar(){
 
     aldeaActual = aldeaOrigen;
     aldeaOrigenDePana = aldeaOrigen;
+    aldeaParalelaOrigenDePana = aldeaParalelaOrigen;
     item = itemOrigen;
     itemOrigenDePana = itemOrigen;
 
@@ -759,7 +755,7 @@ void buscar() {
             printf("[Has encontrado %s]\n", aldeaActual->contiene->nombre);
             printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->contiene->derrotaA), aldeaActual->contiene->derrotaA->nombre);
         }        
-    }   
+    }
     return;
 }
 
@@ -919,6 +915,19 @@ void imprimirUbicaciones() {
 
         temporal = temporal->siguiente;
     }
+
+    printf("\n\n\n");
+    struct AldeaParalela* temporalParalela = aldeaParalelaOrigenDePana;
+
+    while (temporalParalela != NULL) {
+        printf("[Aldea %s]: %s\n[Mazmorra %s]: %s\n\n", 
+            temporalParalela->nombre, 
+            (temporalParalela->contiene != NULL) ? temporalParalela->contiene->nombre : "Sin item",
+            temporalParalela->nombre, 
+            (temporalParalela->mazContiene != NULL) ? temporalParalela->mazContiene->nombre : "Sin item");
+
+        temporalParalela = temporalParalela->siguiente;
+    }    
 
     printf("\n");
     return;
