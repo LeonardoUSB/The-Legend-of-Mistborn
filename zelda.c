@@ -1301,7 +1301,7 @@ void aldeasDerrotadas() {
     return;
 }
 
-
+ 
 // Funcion main desde donde inicia el programa.
 int main(){
     inicializar();
