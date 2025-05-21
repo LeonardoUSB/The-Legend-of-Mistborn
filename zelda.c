@@ -5,6 +5,7 @@
 #include <ctype.h>
 
 int dinero = 0;
+int comandoTrans = 0;
 int aleatorio;
 int transportaParalelo;
 int aldeasTotales;
@@ -16,7 +17,7 @@ struct AldeaParalela* aldeaParalelaOrigenDePana = NULL;
 struct Item* itemOrigenDePana;
 struct Item* item;
 
-void comprar(); void anteriorAldea(); void siguienteAldea(); void gameOver(); void mazmorra(); void generarAleatorio(); void buscar(); void buscarMazmorra(); int indiceAldea(); void atacar(); void victoria();
+void comprar(); void anteriorAldea(); void siguienteAldea(); void gameOver(); void mazmorra(); void generarAleatorio(); void buscar(); void buscarMazmorra(); int indiceAldea(); void atacar(); void victoria(); int indiceAldeaParalela(); void transportar();
 
 struct Jugador
 {
@@ -478,7 +479,7 @@ void ubicaTodoAlter(struct AldeaParalela* cabeza, struct ItemParalelo* ItemIni ,
             }
         }
     }
-};
+}
 
 struct Item* encontrarItem(struct  Item* ItemIni,struct  Item* cabeza,struct  Aldea** AldeaIni, int* cont){
     struct Item* itemSig=ItemIni;
@@ -708,6 +709,8 @@ void inicializar(){
 
     transportaParalelo = (rand() % (numAldeas - 1 + 1)) + 1;
 
+    printf("\nNumero de mazmorra para transportar al mundo paralelo: %d\n", transportaParalelo);
+
     printf("\n\n");
 
     return;
@@ -718,11 +721,12 @@ void aldea() {
     char entrada[6];
 
     while (1) {
-        printf("[ALDEA %d: %s]\n\n", indiceAldea(aldeaActual), aldeaActual->nombre);
+        if (jugador.paralelo == 0) printf("[ALDEA %d: %s]\n\n", indiceAldea(aldeaActual), aldeaActual->nombre);
+        else printf("[ALDEA %d: %s]\n\n", indiceAldeaParalela(aldeaActualParalela), aldeaActualParalela->nombre);
         printf("Comandos disponibles:\n");
         /* Aqui en el if debe ir la condicion de que se imprime la lista de comandos incluyendo "trans" solo si
         El jugador ya derrotó la mazmorra que le permite transportarse al mundo paralelo. */
-        if (15 > 70) printf("------------------------------------------\n| busq | maz | compr | trans | ant | sig |\n------------------------------------------\n\n");
+        if (comandoTrans == 1) {printf("------------------------------------------\n| busq | maz | compr | trans | ant | sig |\n------------------------------------------\n"); printf("| Corazones:%d | Vida:%d | Dinero:%d |\n", jugador.corazones, jugador.vidas, dinero); printf("------------------------------------------\n\n");}
         else {printf("----------------------------------\n| busq | maz | compr | ant | sig |\n----------------------------------\n"); printf("| Corazones:%d | Vida:%d | Dinero:%d |\n", jugador.corazones, jugador.vidas, dinero); printf("----------------------------------\n\n");}
         printf("Ingrese un comando:\n");
 
@@ -737,10 +741,7 @@ void aldea() {
         if (strcmp(entrada, "busq") == 0) buscar();
         else if (strcmp(entrada, "maz") == 0) mazmorra();
         else if (strcmp(entrada, "compr") == 0) comprar();
-        else if (strcmp(entrada, "trans") == 0 && 70>15) {
-            printf("[Escogiste el comando de transportar]\n");
-            return;
-        }
+        else if (strcmp(entrada, "trans") == 0 && comandoTrans == 1) transportar();
         else if (strcmp(entrada, "ant") == 0) anteriorAldea();
         else if (strcmp(entrada, "sig") == 0) siguienteAldea();
         else if (strcmp(entrada, "+") == 0) dinero = dinero + 100;
@@ -750,25 +751,72 @@ void aldea() {
 }
 
 void buscar() {
-    if (aldeaActual->contiene == NULL) {
-        printf("[No hay ningun objeto en esta aldea]\n");
-        if (aldeaActual->nombre == aldeaOrigenDePana-> nombre) printf("[El item que derrota a la mazmorra de Luthadel se encuentra en la tienda]\n\n");
-        else if (aldeaActual->derrotadoPor->ubicacion->mazContiene != NULL) printf("[El item que derrota a la mazmorra de %s se encuentra en la mazmorra %d: %s]\n\n\n", aldeaActual->nombre, indiceAldea(aldeaActual->derrotadoPor->ubicacion), aldeaActual->derrotadoPor->ubicacion->nombre);
-        else printf("[El item que derrota a la mazmorra de %s se encuentra en la aldea %d: %s]\n\n\n", aldeaActual->nombre, indiceAldea(aldeaActual->derrotadoPor->ubicacion), aldeaActual->derrotadoPor->ubicacion->nombre);
-    }
-    else {
-        if (aldeaActual->contiene->encontrado == 1) {
-            printf("[Ya has encontrado %s]\n", aldeaActual->contiene->nombre);
-            printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->contiene->derrotaA), aldeaActual->contiene->derrotaA->nombre);
+    if (jugador.paralelo == 0) {
+        if (aldeaActual->contiene == NULL) {
+            printf("[No hay un objeto en esta aldea]\n");
+            if (aldeaActual->nombre == aldeaOrigenDePana-> nombre) printf("[El item que derrota a la mazmorra de Luthadel se encuentra en la tienda]\n\n\n");
+            else if (aldeaActual->derrotadoPor->ubicacion->mazContiene != NULL) printf("[El item que derrota a la mazmorra de %s se encuentra en la mazmorra %d: %s]\n\n\n", aldeaActual->nombre, indiceAldea(aldeaActual->derrotadoPor->ubicacion), aldeaActual->derrotadoPor->ubicacion->nombre);
+            else printf("[El item que derrota a la mazmorra de %s se encuentra en la aldea %d: %s]\n\n\n", aldeaActual->nombre, indiceAldea(aldeaActual->derrotadoPor->ubicacion), aldeaActual->derrotadoPor->ubicacion->nombre);
         }
         else {
-            aldeaActual->contiene->encontrado = 1;
-            printf("[Has encontrado %s]\n", aldeaActual->contiene->nombre);
-            printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->contiene->derrotaA), aldeaActual->contiene->derrotaA->nombre);
+            if (aldeaActual->contiene->encontrado == 1) {
+                printf("[Ya has encontrado %s]\n", aldeaActual->contiene->nombre);
+                printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->contiene->derrotaA), aldeaActual->contiene->derrotaA->nombre);
+            }
+            else {
+                aldeaActual->contiene->encontrado = 1;
+                printf("[Has encontrado %s]\n", aldeaActual->contiene->nombre);
+                printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->contiene->derrotaA), aldeaActual->contiene->derrotaA->nombre);
+            }        
+        }
+    }
+    else {
+        if (aldeaActualParalela->contiene == NULL) {
+            printf("[No hay un objeto en esta aldea]\n");
+            if (aldeaActualParalela->nombre == aldeaParalelaOrigenDePana-> nombre) printf("[El item que derrota a la mazmorra de Shadesmar Luthadel se encuentra en la tienda]\n\n\n");
+            else if (aldeaActualParalela->derrotadoPor->ubicacion->mazContiene != NULL) printf("[El item que derrota a la mazmorra de %s se encuentra en la mazmorra %d: %s]\n\n\n", aldeaActualParalela->nombre, indiceAldeaParalela(aldeaActualParalela->derrotadoPor->ubicacion), aldeaActualParalela->derrotadoPor->ubicacion->nombre);
+            else printf("[El item que derrota a la mazmorra de %s se encuentra en la aldea %d: %s]\n\n\n", aldeaActualParalela->nombre, indiceAldeaParalela(aldeaActualParalela->derrotadoPor->ubicacion), aldeaActualParalela->derrotadoPor->ubicacion->nombre);
+        }
+        else {
+            if (aldeaActualParalela->contiene->encontrado == 1) {
+                printf("[Ya has encontrado %s]\n", aldeaActualParalela->contiene->nombre);
+                printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldeaParalela(aldeaActualParalela->contiene->derrotaA), aldeaActualParalela->contiene->derrotaA->nombre);
+            }
+            else {
+                aldeaActualParalela->contiene->encontrado = 1;
+                printf("[Has encontrado %s]\n", aldeaActualParalela->contiene->nombre);
+                printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldeaParalela(aldeaActualParalela->contiene->derrotaA), aldeaActualParalela->contiene->derrotaA->nombre);
+            }        
         }        
     }
     return;
 }
+
+
+void transportar() {
+    struct Aldea* temporal;
+    struct AldeaParalela* temporalParalela;
+
+    if (jugador.paralelo == 0) {
+        jugador.paralelo = 1;
+        temporalParalela = aldeaParalelaOrigenDePana;
+
+        while (indiceAldeaParalela(temporalParalela) != indiceAldea(aldeaActual)) temporalParalela = temporalParalela->siguiente;
+
+        aldeaActualParalela = temporalParalela;
+    }
+    else {
+        jugador.paralelo = 0;
+        temporal = aldeaOrigenDePana;
+
+        while (indiceAldea(temporal) != indiceAldeaParalela(aldeaActualParalela)) temporal = temporal-> siguiente;
+
+        aldeaActual = temporal;
+    }
+
+    return;
+}
+
 
 int indiceAldea(struct Aldea* aldeaBuscar) {
     int indice = 1;
@@ -779,23 +827,54 @@ int indiceAldea(struct Aldea* aldeaBuscar) {
     return indice;
 }
 
+
+int indiceAldeaParalela(struct AldeaParalela* aldeaBuscar) {
+    int indice = 1;
+    struct AldeaParalela* temporal = aldeaParalelaOrigenDePana;
+
+    while (temporal != aldeaBuscar) {temporal = temporal->siguiente; indice = indice + 1;}
+
+    return indice;
+}
+
+
 void anteriorAldea() {
-    if (aldeaActual->anterior == NULL) printf("\n[Estas en la primera aldea]\n\n");
+    if (jugador.paralelo == 0) {
+        if (aldeaActual->anterior == NULL) printf("[Estas en la primera aldea]\n\n\n");
+        else {
+            aldeaActual = aldeaActual->anterior;
+            dinero = dinero + 10;
+            generarAleatorio();
+        }
+    }
     else {
-        aldeaActual = aldeaActual->anterior;
-        dinero = dinero + 10;
-        generarAleatorio();
+        if (aldeaActualParalela->anterior == NULL) printf("[Estas en la primera aldea]\n\n\n");
+        else {
+            aldeaActualParalela = aldeaActualParalela->anterior;
+            dinero = dinero + 10;
+            generarAleatorio();
+        }        
     }
 
     return;
 }
 
 void siguienteAldea() {
-    if (aldeaActual->siguiente == NULL) printf("\n[Estas en la ultima aldea]\n\n");
+    if (jugador.paralelo == 0) {
+        if (aldeaActual->siguiente == NULL) printf("[Estas en la ultima aldea]\n\n\n");
+        else {
+            aldeaActual = aldeaActual->siguiente;
+            dinero = dinero + 10;
+            generarAleatorio();
+        }
+    }
     else {
-        aldeaActual = aldeaActual->siguiente;
-        dinero = dinero + 10;
-        generarAleatorio();
+        if (aldeaActualParalela->siguiente == NULL) printf("[Estas en la ultima aldea]\n\n\n");
+        else {
+            aldeaActualParalela = aldeaActualParalela->siguiente;
+            dinero = dinero + 10;
+            generarAleatorio();
+        }        
     }
 
     return;
@@ -807,7 +886,8 @@ void comprar() {
     while (1) {
         printf("[TIENDA]\n");
         printf("1) Recuperar 1 punto de vida: $5\n");
-        printf("2) %s: $25\n", aldeaOrigenDePana->derrotadoPor->nombre);
+        if (jugador.paralelo == 0) printf("2) %s: $25\n", aldeaOrigenDePana->derrotadoPor->nombre);
+        else printf("2) %s: $25\n", aldeaParalelaOrigenDePana->derrotadoPor->nombre);
         printf("3) Corazon adicional: $100\n");
         printf("4) Salir\n\n");
         printf("| Corazones:%d | Vida:%d | Dinero:%d |\n", jugador.corazones, jugador.vidas, dinero); 
@@ -824,7 +904,10 @@ void comprar() {
             else printf("\n\n[No tienes suficiente dinero]\n\n\n");
         }
         else if (strcmp(entrada, "2") == 0) {
-            if(dinero >= 25) {if (aldeaOrigenDePana->derrotadoPor->encontrado == 0) {dinero = dinero - 25; aldeaOrigenDePana->derrotadoPor->encontrado = 1; printf("\n\n[Compraste %s]\n", aldeaOrigenDePana->derrotadoPor->nombre); printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaOrigenDePana->derrotadoPor->derrotaA), aldeaOrigenDePana->derrotadoPor->derrotaA->nombre);} else printf("\n\n[Ya tienes el objeto]\n\n\n");}
+            if(dinero >= 25) {
+                if (jugador.paralelo == 0) {if (aldeaOrigenDePana->derrotadoPor->encontrado == 0) {dinero = dinero - 25; aldeaOrigenDePana->derrotadoPor->encontrado = 1; printf("\n\n[Compraste %s]\n", aldeaOrigenDePana->derrotadoPor->nombre); printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaOrigenDePana->derrotadoPor->derrotaA), aldeaOrigenDePana->derrotadoPor->derrotaA->nombre);} else printf("\n\n[Ya tienes el objeto]\n\n\n");}
+                else {if (aldeaParalelaOrigenDePana->derrotadoPor->encontrado == 0) {dinero = dinero - 25; aldeaParalelaOrigenDePana->derrotadoPor->encontrado = 1; printf("\n\n[Compraste %s]\n", aldeaParalelaOrigenDePana->derrotadoPor->nombre); printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldeaParalela(aldeaParalelaOrigenDePana->derrotadoPor->derrotaA), aldeaParalelaOrigenDePana->derrotadoPor->derrotaA->nombre);} else printf("\n\n[Ya tienes el objeto]\n\n\n");}
+            }
             else printf("\n\n[No tienes suficiente dinero]\n\n\n");
         }
         else if (strcmp(entrada, "3") == 0) {
@@ -845,7 +928,8 @@ void mazmorra() {
     char entrada[5];
 
     while (1) {
-        printf("[MAZMORRA %d: %s]\n\n", indiceAldea(aldeaActual), aldeaActual->nombre);
+        if (jugador.paralelo == 0) printf("[MAZMORRA %d: %s]\n\n", indiceAldea(aldeaActual), aldeaActual->nombre);
+        else printf("[MAZMORRA %d: %s]\n\n", indiceAldeaParalela(aldeaActualParalela), aldeaActualParalela->nombre);
         printf("Comandos disponibles:\n");        
         printf("---------------------------\n| busq | atac | ant | sig |\n----------------------------------\n"); 
         printf("| Corazones:%d | Vida:%d | Dinero:%d |\n", jugador.corazones, jugador.vidas, dinero); 
@@ -864,7 +948,10 @@ void mazmorra() {
         generarAleatorio();
 
         if (strcmp(entrada, "busq") == 0) buscarMazmorra();
-        else if (strcmp(entrada, "atac") == 0) atacar();
+        else if (strcmp(entrada, "atac") == 0) {
+            if (indiceAldea(aldeaActual) == transportaParalelo && comandoTrans == 0) {atacar(); return;}
+            else atacar();
+        }
         else if (strcmp(entrada, "ant") == 0) return;
         else if (strcmp(entrada, "sig") == 0) {siguienteAldea(); return;}      
         else printf("[Comando no valido]\n\n\n");
@@ -872,48 +959,89 @@ void mazmorra() {
 }
 
 void buscarMazmorra() {
-    if (aldeaActual->yaBusco == 1) {printf("[Ya has buscado en esta mazmorra, pierdes 1 punto de vida]\n\n"); jugador.vidas = jugador.vidas - 1; if (jugador.vidas == 0) gameOver();}
-    if (aldeaActual->mazContiene == NULL) {
-        printf("[No hay ningun objeto en esta mazmorra]\n");
-        if (aldeaActual->nombre == aldeaOrigenDePana-> nombre) printf("[El item que derrota a la mazmorra de Luthadel se encuentra en la tienda]\n\n\n");
-        else if (aldeaActual->derrotadoPor->ubicacion->mazContiene != NULL) printf("[El item que derrota esta mazmorra se encuentra en la mazmorra %d: %s]\n\n\n", indiceAldea(aldeaActual->derrotadoPor->ubicacion), aldeaActual->derrotadoPor->ubicacion->nombre);
-        else printf("[El item que derrota a esta mazmorra se encuentra en la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->derrotadoPor->ubicacion), aldeaActual->derrotadoPor->ubicacion->nombre);
-    }
-    else {
-        if (aldeaActual->mazContiene->encontrado == 1) {
-            printf("[Ya has encontrado %s]\n", aldeaActual->mazContiene->nombre);
-            printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->mazContiene->derrotaA), aldeaActual->mazContiene->derrotaA->nombre);
+    if (jugador.paralelo == 0) {
+        if (aldeaActual->yaBusco == 1) {printf("[Ya has buscado en esta mazmorra, pierdes 1 punto de vida]\n\n"); jugador.vidas = jugador.vidas - 1; if (jugador.vidas == 0) gameOver();}
+        if (aldeaActual->mazContiene == NULL) {
+            printf("[No hay ningun objeto en esta mazmorra]\n");
+            if (aldeaActual->nombre == aldeaOrigenDePana-> nombre) printf("[El item que derrota a la mazmorra de Luthadel se encuentra en la tienda]\n\n\n");
+            else if (aldeaActual->derrotadoPor->ubicacion->mazContiene != NULL) printf("[El item que derrota esta mazmorra se encuentra en la mazmorra %d: %s]\n\n\n", indiceAldea(aldeaActual->derrotadoPor->ubicacion), aldeaActual->derrotadoPor->ubicacion->nombre);
+            else printf("[El item que derrota a esta mazmorra se encuentra en la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->derrotadoPor->ubicacion), aldeaActual->derrotadoPor->ubicacion->nombre);
         }
         else {
-            aldeaActual->mazContiene->encontrado = 1;
-            printf("[Has encontrado %s]\n", aldeaActual->mazContiene->nombre);
-            printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->mazContiene->derrotaA), aldeaActual->mazContiene->derrotaA->nombre);
-        }        
+            if (aldeaActual->mazContiene->encontrado == 1) {
+                printf("[Ya has encontrado %s]\n", aldeaActual->mazContiene->nombre);
+                printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->mazContiene->derrotaA), aldeaActual->mazContiene->derrotaA->nombre);
+            }
+            else {
+                aldeaActual->mazContiene->encontrado = 1;
+                printf("[Has encontrado %s]\n", aldeaActual->mazContiene->nombre);
+                printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldea(aldeaActual->mazContiene->derrotaA), aldeaActual->mazContiene->derrotaA->nombre);
+            }        
+        }
+        aldeaActual->yaBusco = 1;
     }
-    aldeaActual->yaBusco = 1;
+    else {
+        if (aldeaActualParalela->yaBusco == 1) {printf("[Ya has buscado en esta mazmorra, pierdes 1 punto de vida]\n\n"); jugador.vidas = jugador.vidas - 1; if (jugador.vidas == 0) gameOver();}
+        if (aldeaActualParalela->mazContiene == NULL) {
+            printf("[No hay ningun objeto en esta mazmorra]\n");
+            if (aldeaActualParalela->nombre == aldeaParalelaOrigenDePana-> nombre) printf("[El item que derrota a la mazmorra de Shadesmar Luthadel se encuentra en la tienda]\n\n\n");
+            else if (aldeaActualParalela->derrotadoPor->ubicacion->mazContiene != NULL) printf("[El item que derrota esta mazmorra se encuentra en la mazmorra %d: %s]\n\n\n", indiceAldeaParalela(aldeaActualParalela->derrotadoPor->ubicacion), aldeaActualParalela->derrotadoPor->ubicacion->nombre);
+            else printf("[El item que derrota a esta mazmorra se encuentra en la aldea %d: %s]\n\n\n", indiceAldeaParalela(aldeaActualParalela->derrotadoPor->ubicacion), aldeaActualParalela->derrotadoPor->ubicacion->nombre);
+        }
+        else {
+            if (aldeaActualParalela->mazContiene->encontrado == 1) {
+                printf("[Ya has encontrado %s]\n", aldeaActualParalela->mazContiene->nombre);
+                printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldeaParalela(aldeaActualParalela->mazContiene->derrotaA), aldeaActualParalela->mazContiene->derrotaA->nombre);
+            }
+            else {
+                aldeaActualParalela->mazContiene->encontrado = 1;
+                printf("[Has encontrado %s]\n", aldeaActualParalela->mazContiene->nombre);
+                printf("[Este item derrota a la mazmorra de la aldea %d: %s]\n\n\n", indiceAldeaParalela(aldeaActualParalela->mazContiene->derrotaA), aldeaActualParalela->mazContiene->derrotaA->nombre);
+            }        
+        }
+        aldeaActualParalela->yaBusco = 1;        
+    }
     return;
 }
 
 
 void atacar() {
-    if (aldeaActual->derrotadoPor->encontrado == 1 || aldeaActualParalela->derrotadoPor->encontrado == 1) {
-        if (aldeaActual->vencida == 0 || aldeaActualParalela->vencida == 0) {
-            jugador.mazmorrasVencidas = jugador.mazmorrasVencidas + 1;
-            if (jugador.paralelo == 0) aldeaActual->vencida = 1;
-            else aldeaActualParalela->vencida = 1;
-            printf("[¡Has derrotado a la mazmorra!]\n\n");
-            if (jugador.mazmorrasVencidas == aldeasTotales) victoria();
-            if (indiceAldea(aldeaActual) == transportaParalelo) {
-                printf("\n[Encuentras un pozo pequeño y de pocos metros de profundidad]\n[Empiezas a sentir unas ligeras pulsaciones]\n[El pozo te llama...]\n[Como hipnotizado, tus pies se mueven y te sumerges en las aguas]\n[Se te bruma la vista y pierdes la consciencia]\n\n\n[Despiertas en un lugar conocido]\n\n\n[Miras a tu alrededor y te das cuenta que estas en Luthadel]\n\n\n[... Pero no es Luthadel]\n\n\n[BIENVENIDO A SHADESMAR]\n\n\n");
-                jugador.paralelo = 1;
+    if (jugador.paralelo == 0) {
+        if (aldeaActual->derrotadoPor->encontrado == 1) {
+            if (aldeaActual->vencida == 0) {
+                jugador.mazmorrasVencidas = jugador.mazmorrasVencidas + 1;
+                aldeaActual->vencida = 1;
+                printf("[¡Has derrotado a la mazmorra!]\n\n\n");
+                if (jugador.mazmorrasVencidas == aldeasTotales) victoria();
+                if (indiceAldea(aldeaActual) == transportaParalelo) {
+                    printf("\n[Encuentras un pozo pequeño y de pocos metros de profundidad]\n[Empiezas a sentir unas ligeras pulsaciones]\n[El pozo te llama...]\n[Como hipnotizado, tus pies se mueven y te sumerges en las aguas]\n[Se te bruma la vista y pierdes la consciencia]\n\n\n[Despiertas en un lugar conocido]\n\n\n[Miras a tu alrededor y te das cuenta que estas en Luthadel]\n\n\n[... Pero no es Luthadel]\n\n\n[BIENVENIDO A SHADESMAR]\n\n\n");
+                    jugador.paralelo = 1;
+                    comandoTrans = 1;
+                }
             }
+            else printf("[Ya has derrotado a esta mazmorra]\n\n\n");
         }
-        else printf("[Ya has derrotado a esta mazmorra]\n\n");
+        else {
+            printf("[No posees el item para derrotar a esta mazmorra]\n[Pierdes 1 punto de vida]\n\n\n");
+            jugador.vidas = jugador.vidas - 1; 
+            if (jugador.vidas == 0) gameOver();
+        }
     }
     else {
-        printf("[No posees el item para derrotar a esta mazmorra]\n[Pierdes 1 punto de vida]\n\n");
-        jugador.vidas = jugador.vidas - 1; 
-        if (jugador.vidas == 0) gameOver();
+        if (aldeaActualParalela->derrotadoPor->encontrado == 1) {
+            if (aldeaActualParalela->vencida == 0) {
+                jugador.mazmorrasVencidas = jugador.mazmorrasVencidas + 1;
+                aldeaActualParalela->vencida = 1;
+                printf("[¡Has derrotado a la mazmorra!]\n\n\n");
+                if (jugador.mazmorrasVencidas == aldeasTotales) victoria();
+            }
+            else printf("[Ya has derrotado a esta mazmorra]\n\n\n");
+        }
+        else {
+            printf("[No posees el item para derrotar a esta mazmorra]\n[Pierdes 1 punto de vida]\n\n\n");
+            jugador.vidas = jugador.vidas - 1; 
+            if (jugador.vidas == 0) gameOver();
+        }        
     }
 
     return;
@@ -932,13 +1060,13 @@ void generarAleatorio() {
 
 
 void gameOver() {
-    printf("\nTE HAS MORIDO\n");
+    printf("[Y en un abrir y cerrar de ojos el mundo cambio]\n[Tu mundo]\n\n\n[A tu lado se encuentra alguien de pie observandote]\n[No lo conoces, pero comprendes de quien se trata]\n\n\n'...Has muerto.'\n");
     exit(0);
 }
 
 
 void victoria() {
-    printf("\nHas ganao\n");
+    printf("\n[¡Has derrotado a todas las mazmorras!]\n\n[Gracias a ti el mundo ha sobrevivido a la ruina]\n[Ahora a descansar, por fin]\n\n\n\n[CREDITOS]\n\nIdea original: Prof. Fernando Torre Mora\nDireccion: Alejandro De Vincenzo y Leonardo Dolande\nProgramadores: Alejandro De Vincenzo y Leonardo Dolande\nDireccion de arte: Leonardo Dolande\nBanda sonora: Alejandro De Vincenzo\nDiseño de niveles: Leonardo Dolande\nNarrador: Leonardo Dolande\nTraduccion al español: Alejandro De Vincenzo\nTraduccion al japones: Alejandro De Vincenzo\n");
     exit(0);    
 }
 
